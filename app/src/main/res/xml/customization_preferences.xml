@@ -183,7 +183,7 @@
         android:title="@string/preferences_media"
         app:allowDividerAbove="true"
         app:iconSpaceReserved="false">
-        <org.mozilla.fenix.settings.DropDownListPreference
+        <androidx.preference.DropDownPreference
             android:defaultValue="ask"
             android:entries="@array/fullscreen_video_mode_entries"
             android:entryValues="@array/fullscreen_video_mode_values"

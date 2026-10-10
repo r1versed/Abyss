@@ -52,8 +52,8 @@
     <string name="preferences_media">Media</string>
     <string name="preferences_fullscreen_videos_title">Fullscreen videos</string>
     <string name="fullscreen_video_mode_ask">Ask</string>
-    <string name="fullscreen_video_mode_always_theater">Always Theater</string>
-    <string name="fullscreen_video_mode_never">Never (standard fullscreen)</string>
+    <string name="fullscreen_video_mode_always_theater">Always Clarus Theater</string>
+    <string name="fullscreen_video_mode_never">Always normal fullscreen</string>
     <string name="fullscreen_prompt_title">Fullscreen Media</string>
     <string name="fullscreen_prompt_subtitle">Choose playback mode</string>
     <string name="fullscreen_prompt_theater">Clarus Theater</string>
