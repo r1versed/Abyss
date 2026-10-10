@@ -159,6 +159,11 @@
             android:key="@string/pref_key_relinquish_memory_under_pressure"
             android:summary="@string/preferences_relinquish_memory_description"
             android:title="@string/preferences_relinquish_memory_title" />
+        <androidx.preference.SwitchPreferenceCompat
+            android:defaultValue="false"
+            android:key="@string/pref_key_hide_system_bars"
+            android:summary="@string/preferences_hide_system_bars_summary"
+            android:title="@string/preferences_hide_system_bars" />
     </androidx.preference.PreferenceCategory>
 
     <androidx.preference.PreferenceCategory

@@ -1613,6 +1613,11 @@ class Settings(
         default = FULLSCREEN_VIDEO_MODE_ASK,
     )
 
+    var hideSystemBars by booleanPreference(
+        key = appContext.getPreferenceKey(R.string.pref_key_hide_system_bars),
+        default = false,
+    )
+
     /**
      * Check each active accessibility service to see if it can perform gestures, if any can,
      * then it is *likely* a switch service is enabled. We are assuming this to be the case based on #7486

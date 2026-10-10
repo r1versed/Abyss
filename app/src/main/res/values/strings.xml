@@ -44,6 +44,10 @@
     <string name="preferences_default_homepage">Default Homepage</string>
     <string name="preferences_custom_homepage">Custom Homepage</string>
 
+    <string name="pref_key_hide_system_bars">pref_key_hide_system_bars</string>
+    <string name="preferences_hide_system_bars">Hide system bars</string>
+    <string name="preferences_hide_system_bars_summary">Hide status and navigation bars while browsing</string>
+
     <string name="pref_key_fullscreen_video_mode">pref_key_fullscreen_video_mode</string>
     <string name="preferences_media">Media</string>
     <string name="preferences_fullscreen_videos_title">Fullscreen videos</string>

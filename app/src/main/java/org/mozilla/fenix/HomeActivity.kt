@@ -8,6 +8,7 @@ import android.app.assist.AssistContent
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.content.Intent.ACTION_MAIN
 import android.content.Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
 import android.content.pm.PackageManager
@@ -35,7 +36,10 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.net.toUri
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.text.layoutDirection
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.core.view.doOnLayout
+import android.view.WindowManager
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavController
@@ -247,6 +251,12 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
                 }
             },
         )
+    }
+
+    private val immersivePrefListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+        if (key == getString(R.string.pref_key_hide_system_bars)) {
+            applyImmersiveMode()
+        }
     }
 
     private val ipProtectionPrompter by lazy {
@@ -474,6 +484,7 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
         window.decorView.layoutDirection = Locale.getDefault().layoutDirection
 
         binding = ActivityHomeBinding.inflate(layoutInflater)
+        components.settings.preferences.registerOnSharedPreferenceChangeListener(immersivePrefListener)
 
         Performance.processIntentIfPerformanceTest(intent, this)
 
@@ -795,6 +806,8 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
     override fun onResume() {
         super.onResume()
 
+        applyImmersiveMode()
+
         // Diagnostic breadcrumb for "Display already aquired" crash:
         // https://github.com/mozilla-mobile/android-components/issues/7960
         breadcrumb(
@@ -959,6 +972,7 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
 
     @CallSuper
     override fun onDestroy() {
+        components.settings.preferences.unregisterOnSharedPreferenceChangeListener(immersivePrefListener)
         val startTimeProfiler = components.core.engine.profiler?.getProfilerTime()
 
         super.onDestroy()
@@ -1008,6 +1022,38 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
                 orientation = OrientationMode.fromInteger(newConfig.orientation),
             ),
         )
+
+        applyImmersiveMode()
+    }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (hasFocus) {
+            applyImmersiveMode()
+        }
+    }
+
+    fun applyImmersiveMode() {
+        val enabled = components.settings.hideSystemBars
+        val windowInsetsController = WindowInsetsControllerCompat(window, window.decorView)
+        val attrs = window.attributes
+        if (enabled) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                attrs.layoutInDisplayCutoutMode =
+                    WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+                window.attributes = attrs
+            }
+            windowInsetsController.systemBarsBehavior =
+                WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            windowInsetsController.hide(WindowInsetsCompat.Type.systemBars())
+        } else {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                attrs.layoutInDisplayCutoutMode =
+                    WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_DEFAULT
+                window.attributes = attrs
+            }
+            windowInsetsController.show(WindowInsetsCompat.Type.systemBars())
+        }
     }
 
     final override fun recreate() {
