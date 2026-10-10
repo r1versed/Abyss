@@ -27,6 +27,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -135,12 +136,14 @@ fun TabPeekOverlay(
                     .fillMaxSize()
                     .padding(horizontal = 14.dp, vertical = 12.dp),
             ) {
-                // Header row
+                // Header row (fixed height so nothing spills out across font scales)
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    // Security / Mode badge
+                    // Lock icon
                     Box(
                         modifier = Modifier
                             .size(36.dp)
@@ -164,113 +167,90 @@ fun TabPeekOverlay(
 
                     Spacer(Modifier.width(10.dp))
 
-                    // Title & URL column
-                    Column(modifier = Modifier.weight(1f)) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            Text(
-                                text = domain,
-                                style = FirefoxTheme.typography.subtitle1.copy(fontWeight = FontWeight.Bold),
-                                color = MaterialTheme.colorScheme.onSurface,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                            )
-
-                            // Status badge
-                            if (peeking.isPinned) {
-                                Box(
-                                    modifier = Modifier
-                                        .clip(RoundedCornerShape(8.dp))
-                                        .background(Color(0xFFF59E0B).copy(alpha = 0.22f))
-                                        .padding(horizontal = 7.dp, vertical = 2.dp),
-                                    contentAlignment = Alignment.Center,
-                                ) {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                    ) {
-                                        Icon(
-                                            painter = painterResource(iconsR.drawable.mozac_ic_pin_24),
-                                            contentDescription = null,
-                                            tint = Color(0xFFF59E0B),
-                                            modifier = Modifier.size(11.dp),
-                                        )
-                                        Text(
-                                            text = "Pinned",
-                                            style = FirefoxTheme.typography.caption.copy(
-                                                fontSize = 10.sp,
-                                                fontWeight = FontWeight.Bold,
-                                            ),
-                                            color = Color(0xFFF59E0B),
-                                        )
-                                    }
-                                }
-                            } else {
-                                Box(
-                                    modifier = Modifier
-                                        .clip(RoundedCornerShape(8.dp))
-                                        .background(Color.White.copy(alpha = 0.08f))
-                                        .padding(horizontal = 7.dp, vertical = 2.dp),
-                                    contentAlignment = Alignment.Center,
-                                ) {
-                                    Text(
-                                        text = "Link Peek",
-                                        style = FirefoxTheme.typography.caption.copy(
-                                            fontSize = 10.sp,
-                                            fontWeight = FontWeight.Medium,
-                                        ),
-                                        color = Color(0xFFF59E0B),
-                                    )
-                                }
-                            }
-                        }
-
+                    // Column (domain and URL, each maxLines 1, ellipsis) with weight 1
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(end = 8.dp),
+                        verticalArrangement = Arrangement.Center,
+                    ) {
+                        Text(
+                            text = domain,
+                            style = FirefoxTheme.typography.subtitle1.copy(
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 14.sp,
+                                lineHeight = 18.sp,
+                            ),
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
                         Text(
                             text = peeking.content.url,
-                            style = FirefoxTheme.typography.caption.copy(fontSize = 11.sp),
+                            style = FirefoxTheme.typography.caption.copy(
+                                fontSize = 11.sp,
+                                lineHeight = 14.sp,
+                            ),
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                         )
                     }
 
-                    if (peeking.isPinned) {
-                        Button(
-                            onClick = onCommit,
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(0xFFF59E0B),
-                                contentColor = Color(0xFF1C1410),
-                            ),
-                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
-                            shape = RoundedCornerShape(12.dp),
-                            modifier = Modifier.height(30.dp),
-                        ) {
+                    // Badge (single-line, never shrinks)
+                    Box(
+                        modifier = Modifier
+                            .wrapContentWidth()
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(
+                                if (peeking.isPinned) Color(0xFFF59E0B).copy(alpha = 0.22f)
+                                else Color.White.copy(alpha = 0.08f),
+                            )
+                            .padding(horizontal = 8.dp, vertical = 4.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        if (peeking.isPinned) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(4.dp),
                             ) {
                                 Icon(
-                                    painter = painterResource(iconsR.drawable.mozac_ic_tab_24),
+                                    painter = painterResource(iconsR.drawable.mozac_ic_pin_24),
                                     contentDescription = null,
-                                    modifier = Modifier.size(13.dp),
+                                    tint = Color(0xFFF59E0B),
+                                    modifier = Modifier.size(11.dp),
                                 )
                                 Text(
-                                    text = "Open Tab",
+                                    text = "Pinned",
                                     style = FirefoxTheme.typography.caption.copy(
-                                        fontSize = 11.sp,
+                                        fontSize = 10.sp,
                                         fontWeight = FontWeight.Bold,
                                     ),
+                                    color = Color(0xFFF59E0B),
+                                    softWrap = false,
+                                    maxLines = 1,
                                 )
                             }
+                        } else {
+                            Text(
+                                text = "Link Peek",
+                                style = FirefoxTheme.typography.caption.copy(
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Medium,
+                                ),
+                                color = Color(0xFFF59E0B),
+                                softWrap = false,
+                                maxLines = 1,
+                            )
                         }
-                        Spacer(Modifier.width(4.dp))
                     }
 
+                    Spacer(Modifier.width(6.dp))
+
+                    // Close button
                     IconButton(
                         onClick = onDismiss,
-                        modifier = Modifier.size(34.dp),
+                        modifier = Modifier.size(36.dp),
                     ) {
                         Icon(
                             painter = painterResource(iconsR.drawable.mozac_ic_cross_24),
