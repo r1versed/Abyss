@@ -22,6 +22,10 @@ import androidx.compose.runtime.setValue
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 /**
  * Standalone Fullscreen Activity hosting Clarus Theater.
@@ -36,6 +40,8 @@ class ClarusTheaterActivity : ComponentActivity() {
     private var isInPipMode by mutableStateOf(false)
     private var currentVideoWidth: Int = 16
     private var currentVideoHeight: Int = 9
+    private var watchdogActive: Boolean = false
+    private var watchdogJob: Job? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -76,6 +82,17 @@ class ClarusTheaterActivity : ComponentActivity() {
         this.currentPositionMs = initialPositionMs
         this.isPaused = initialPaused
 
+        if (trigger == "fullscreen") {
+            watchdogActive = true
+            watchdogJob = lifecycleScope.launch {
+                delay(2000L)
+                if (watchdogActive) {
+                    android.util.Log.w("ClarusTheater", "Watchdog: player did not reach STATE_READY within 2000ms. Falling back.")
+                    returnPlaybackFallback()
+                }
+            }
+        }
+
         setContent {
             ClarusTheaterScreen(
                 videoUrl = videoUrl,
@@ -95,6 +112,8 @@ class ClarusTheaterActivity : ComponentActivity() {
                     currentVideoHeight = h
                 },
                 onClose = { finalPos, finalPaused ->
+                    watchdogJob?.cancel()
+                    watchdogActive = false
                     returnPlaybackHandoff(finalPos, finalPaused)
                 },
                 onEnterPip = {
@@ -102,6 +121,16 @@ class ClarusTheaterActivity : ComponentActivity() {
                 },
                 onOpenInBrowser = { url ->
                     openInBrowser(url)
+                },
+                onPlaybackReady = {
+                    watchdogActive = false
+                    watchdogJob?.cancel()
+                },
+                onPlaybackFailed = { error ->
+                    if (trigger == "fullscreen" && watchdogActive) {
+                        android.util.Log.w("ClarusTheater", "Playback failed during initial load: $error. Falling back to web fullscreen.")
+                        returnPlaybackFallback()
+                    }
                 },
             )
         }
@@ -177,9 +206,34 @@ class ClarusTheaterActivity : ComponentActivity() {
     }
 
     private fun returnPlaybackHandoff(finalPositionMs: Long, paused: Boolean) {
+        watchdogActive = false
+        watchdogJob?.cancel()
         val resultIntent = Intent().apply {
             putExtra(EXTRA_RESULT_POSITION_MS, finalPositionMs)
             putExtra(EXTRA_RESULT_IS_PAUSED, paused)
+            putExtra(EXTRA_RESULT_FALLBACK_FULLSCREEN, false)
+        }
+        setResult(Activity.RESULT_OK, resultIntent)
+        finish()
+        if (Build.VERSION.SDK_INT >= 34) {
+            overrideActivityTransition(
+                Activity.OVERRIDE_TRANSITION_CLOSE,
+                android.R.anim.fade_in,
+                android.R.anim.fade_out,
+            )
+        } else {
+            @Suppress("DEPRECATION")
+            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
+        }
+    }
+
+    private fun returnPlaybackFallback() {
+        watchdogActive = false
+        watchdogJob?.cancel()
+        val resultIntent = Intent().apply {
+            putExtra(EXTRA_RESULT_POSITION_MS, currentPositionMs)
+            putExtra(EXTRA_RESULT_IS_PAUSED, isPaused)
+            putExtra(EXTRA_RESULT_FALLBACK_FULLSCREEN, true)
         }
         setResult(Activity.RESULT_OK, resultIntent)
         finish()
@@ -221,6 +275,7 @@ class ClarusTheaterActivity : ComponentActivity() {
 
         const val EXTRA_RESULT_POSITION_MS = "org.mozilla.fenix.theater.EXTRA_RESULT_POSITION_MS"
         const val EXTRA_RESULT_IS_PAUSED = "org.mozilla.fenix.theater.EXTRA_RESULT_IS_PAUSED"
+        const val EXTRA_RESULT_FALLBACK_FULLSCREEN = "org.mozilla.fenix.theater.EXTRA_RESULT_FALLBACK_FULLSCREEN"
 
         const val DEFAULT_SAMPLE_URL =
             "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4"

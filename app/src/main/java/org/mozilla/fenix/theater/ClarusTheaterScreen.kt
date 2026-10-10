@@ -152,6 +152,8 @@ fun ClarusTheaterScreen(
     onClose: (currentPositionMs: Long, isPaused: Boolean) -> Unit,
     onEnterPip: () -> Unit,
     onOpenInBrowser: ((url: String) -> Unit)? = null,
+    onPlaybackReady: (() -> Unit)? = null,
+    onPlaybackFailed: ((error: String) -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -246,6 +248,7 @@ fun ClarusTheaterScreen(
                     durationMs = player.duration.coerceAtLeast(0L)
                     playbackError = null
                     isContainerUnsupported = false
+                    onPlaybackReady?.invoke()
                     if (!hasPerformedInitialSeek && initialPositionMs > 0L) {
                         hasPerformedInitialSeek = true
                         player.seekTo(initialPositionMs)
@@ -273,10 +276,12 @@ fun ClarusTheaterScreen(
                 if (error.errorCode == PlaybackException.ERROR_CODE_PARSING_CONTAINER_UNSUPPORTED) {
                     isContainerUnsupported = true
                     playbackError = "This link does not appear to be a direct media stream."
+                    onPlaybackFailed?.invoke("CONTAINER_UNSUPPORTED")
                 } else {
                     isContainerUnsupported = false
                     val detailedMsg = error.cause?.message ?: error.message ?: error.errorCodeName
                     playbackError = detailedMsg
+                    onPlaybackFailed?.invoke(detailedMsg)
                 }
             }
 

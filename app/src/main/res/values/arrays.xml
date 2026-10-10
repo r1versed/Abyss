@@ -52,4 +52,16 @@
     <string name="remote_settings_server_prod">production</string>
     <string name="remote_settings_server_dev">development</string>
     <string name="remote_settings_server_stage">staging</string>
+
+    <string-array name="fullscreen_video_mode_entries">
+        <item>@string/fullscreen_video_mode_ask</item>
+        <item>@string/fullscreen_video_mode_always_theater</item>
+        <item>@string/fullscreen_video_mode_never</item>
+    </string-array>
+
+    <string-array name="fullscreen_video_mode_values">
+        <item>ask</item>
+        <item>always_theater</item>
+        <item>never</item>
+    </string-array>
 </resources>

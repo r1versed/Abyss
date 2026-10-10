@@ -172,4 +172,18 @@
             android:key="@string/pref_key_show_fullscreen_toast"
             android:title="@string/preferences_show_fullscreen_toast" />
     </androidx.preference.PreferenceCategory>
+
+    <androidx.preference.PreferenceCategory
+        android:layout="@layout/preference_cat_style"
+        android:title="@string/preferences_media"
+        app:allowDividerAbove="true"
+        app:iconSpaceReserved="false">
+        <org.mozilla.fenix.settings.DropDownListPreference
+            android:defaultValue="ask"
+            android:entries="@array/fullscreen_video_mode_entries"
+            android:entryValues="@array/fullscreen_video_mode_values"
+            android:key="@string/pref_key_fullscreen_video_mode"
+            android:title="@string/preferences_fullscreen_videos_title"
+            app:useSimpleSummaryProvider="true" />
+    </androidx.preference.PreferenceCategory>
 </androidx.preference.PreferenceScreen>

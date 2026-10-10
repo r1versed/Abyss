@@ -98,6 +98,10 @@ class Settings(
     companion object {
         const val FENIX_PREFERENCES = "fenix_preferences"
 
+        const val FULLSCREEN_VIDEO_MODE_ASK = "ask"
+        const val FULLSCREEN_VIDEO_MODE_ALWAYS_THEATER = "always_theater"
+        const val FULLSCREEN_VIDEO_MODE_NEVER = "never"
+
         private const val BLOCKED_INT = 0
         private const val ASK_TO_ALLOW_INT = 1
         private const val ALLOWED_INT = 2
@@ -1602,6 +1606,11 @@ class Settings(
     var customHomepageUrl by stringPreference(
         appContext.getPreferenceKey(R.string.pref_key_custom_homepage_url),
         default = "https://duckduckgo.com",
+    )
+
+    var fullscreenVideoMode by stringPreference(
+        appContext.getPreferenceKey(R.string.pref_key_fullscreen_video_mode),
+        default = FULLSCREEN_VIDEO_MODE_ASK,
     )
 
     /**

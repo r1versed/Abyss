@@ -44,6 +44,18 @@
     <string name="preferences_default_homepage">Default Homepage</string>
     <string name="preferences_custom_homepage">Custom Homepage</string>
 
+    <string name="pref_key_fullscreen_video_mode">pref_key_fullscreen_video_mode</string>
+    <string name="preferences_media">Media</string>
+    <string name="preferences_fullscreen_videos_title">Fullscreen videos</string>
+    <string name="fullscreen_video_mode_ask">Ask</string>
+    <string name="fullscreen_video_mode_always_theater">Always Theater</string>
+    <string name="fullscreen_video_mode_never">Never (standard fullscreen)</string>
+    <string name="fullscreen_prompt_title">Fullscreen Media</string>
+    <string name="fullscreen_prompt_subtitle">Choose playback mode</string>
+    <string name="fullscreen_prompt_theater">Clarus Theater</string>
+    <string name="fullscreen_prompt_fullscreen">Standard Fullscreen</string>
+    <string name="fullscreen_prompt_remember">Remember my choice</string>
+
     <!-- App name for private browsing mode. %s is the name of the app (for example "Firefox"). -->
     <string name="app_name_private_5">Private %s</string>
     <!-- App name for private browsing mode. %s is the name of the app (for example "Firefox"). -->

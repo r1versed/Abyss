@@ -59,7 +59,14 @@ import org.mozilla.fenix.components.appstate.AppAction.SnackbarAction
 import org.mozilla.fenix.components.metrics.installSourcePackage
 import org.mozilla.fenix.components.share.isSystemShareSheetSupported
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.ViewCompositionStrategy
 import org.mozilla.fenix.theater.ClarusTheaterActivity
+import org.mozilla.fenix.theater.ClarusVideoPayload
+import org.mozilla.fenix.theater.FullscreenChoicePrompt
+import org.mozilla.fenix.theme.FirefoxTheme
+import org.mozilla.fenix.theme.Theme
+import org.mozilla.fenix.theme.getThemeProvider
 import java.util.ArrayList
 import mozilla.components.browser.state.selector.selectedTab
 import org.mozilla.fenix.HomeActivity
@@ -141,9 +148,26 @@ class BrowserFragment : BaseBrowserFragment(), UserInteractionHandler, SystemIns
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             if (result.resultCode == android.app.Activity.RESULT_OK) {
                 val data = result.data
-                val returnPosMs = data?.getLongExtra(ClarusTheaterActivity.EXTRA_RESULT_POSITION_MS, -1L) ?: -1L
-                val returnPaused = data?.getBooleanExtra(ClarusTheaterActivity.EXTRA_RESULT_IS_PAUSED, false) ?: false
-                if (returnPosMs >= 0L) {
+                val isFallback = data?.getBooleanExtra(
+                    ClarusTheaterActivity.EXTRA_RESULT_FALLBACK_FULLSCREEN,
+                    false,
+                ) ?: false
+                val returnPosMs = data?.getLongExtra(
+                    ClarusTheaterActivity.EXTRA_RESULT_POSITION_MS,
+                    -1L,
+                ) ?: -1L
+                val returnPaused = data?.getBooleanExtra(
+                    ClarusTheaterActivity.EXTRA_RESULT_IS_PAUSED,
+                    false,
+                ) ?: false
+                if (isFallback) {
+                    val returnPosSec = if (returnPosMs >= 0L) returnPosMs / 1000.0 else 0.0
+                    android.util.Log.w(
+                        "ClarusTheater",
+                        "Theater fallback: resuming in-page video pos=${returnPosSec}s",
+                    )
+                    requireComponents.core.clarusTheater.seekAndSync(returnPosSec, false)
+                } else if (returnPosMs >= 0L) {
                     val returnPosSec = returnPosMs / 1000.0
                     android.util.Log.d(
                         "ClarusTheater",
@@ -226,44 +250,117 @@ class BrowserFragment : BaseBrowserFragment(), UserInteractionHandler, SystemIns
         setupClarusTheaterInterception()
     }
 
+    private var fullscreenPromptOverlay: ComposeView? = null
+
+    private fun dismissFullscreenPrompt() {
+        fullscreenPromptOverlay?.let {
+            binding.browserLayout.removeView(it)
+            fullscreenPromptOverlay = null
+        }
+    }
+
+    private fun launchClarusTheater(payload: ClarusVideoPayload) {
+        val clarusTheater = requireComponents.core.clarusTheater
+        android.util.Log.d(
+            "ClarusTheater",
+            "Intercepting web video fullscreen: launching Clarus Theater for ${payload.src}",
+        )
+        clarusTheater.pauseWebVideo()
+        clarusTheater.exitWebFullscreen()
+
+        val isAudio = ClarusTheaterActivity.isAudioUrl(payload.src)
+        val referrer = payload.referrer.ifBlank { payload.pageUrl }
+        val userAgent = runCatching {
+            requireComponents.core.engine.settings.userAgentString
+        }.getOrNull()
+
+        val intent = ClarusTheaterActivity.createIntent(
+            context = requireContext(),
+            videoUrl = payload.src,
+            title = payload.title,
+            initialPositionMs = (payload.currentTime * 1000).toLong(),
+            initialPaused = payload.paused,
+            badges = if (payload.qualityBadge.isNotEmpty()) arrayListOf(payload.qualityBadge) else ArrayList(),
+            isLive = payload.isLive,
+            isAudio = isAudio,
+            referrer = referrer,
+            cookies = payload.cookies,
+            userAgent = userAgent,
+            trigger = payload.trigger,
+        )
+        theaterLauncher.launch(intent)
+    }
+
+    private fun showFullscreenChoicePrompt(payload: ClarusVideoPayload) {
+        dismissFullscreenPrompt()
+        val cv = ComposeView(requireContext()).apply {
+            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindow)
+            setContent {
+                val theme = getThemeProvider().provideTheme()
+                val isDark = theme == Theme.Dark || theme == Theme.Private
+                val isPrivate = theme == Theme.Private
+                FirefoxTheme(theme = theme) {
+                    FullscreenChoicePrompt(
+                        videoTitle = payload.title.takeIf { it.isNotBlank() },
+                        isDarkTheme = isDark,
+                        isPrivate = isPrivate,
+                        onTheater = { rememberChoice ->
+                            if (rememberChoice) {
+                                requireComponents.settings.fullscreenVideoMode =
+                                    Settings.FULLSCREEN_VIDEO_MODE_ALWAYS_THEATER
+                            }
+                            dismissFullscreenPrompt()
+                            launchClarusTheater(payload)
+                        },
+                        onFullscreen = { rememberChoice ->
+                            if (rememberChoice) {
+                                requireComponents.settings.fullscreenVideoMode =
+                                    Settings.FULLSCREEN_VIDEO_MODE_NEVER
+                            }
+                            dismissFullscreenPrompt()
+                        },
+                        onDismiss = {
+                            dismissFullscreenPrompt()
+                        },
+                    )
+                }
+            }
+        }
+        fullscreenPromptOverlay = cv
+        binding.browserLayout.addView(
+            cv,
+            androidx.coordinatorlayout.widget.CoordinatorLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT,
+            ),
+        )
+    }
+
     private fun setupClarusTheaterInterception() {
         val clarusTheater = requireComponents.core.clarusTheater
         clarusTheater.onFullscreenRequestedListener = { payload ->
             viewLifecycleOwner.lifecycleScope.launch(Dispatchers.Main) {
-                if (payload.isSupported && payload.src.isNotBlank()) {
-                    android.util.Log.d(
-                        "ClarusTheater",
-                        "Intercepting web video fullscreen: launching Clarus Theater for ${payload.src}",
-                    )
-                    clarusTheater.pauseWebVideo()
-                    clarusTheater.exitWebFullscreen()
-
-                    val isAudio = ClarusTheaterActivity.isAudioUrl(payload.src)
-                    val referrer = payload.referrer.ifBlank { payload.pageUrl }
-                    val userAgent = runCatching {
-                        requireComponents.core.engine.settings.userAgentString
-                    }.getOrNull()
-
-                    val intent = ClarusTheaterActivity.createIntent(
-                        context = requireContext(),
-                        videoUrl = payload.src,
-                        title = payload.title,
-                        initialPositionMs = (payload.currentTime * 1000).toLong(),
-                        initialPaused = payload.paused,
-                        badges = if (payload.qualityBadge.isNotEmpty()) arrayListOf(payload.qualityBadge) else ArrayList(),
-                        isLive = payload.isLive,
-                        isAudio = isAudio,
-                        referrer = referrer,
-                        cookies = payload.cookies,
-                        userAgent = userAgent,
-                        trigger = payload.trigger,
-                    )
-                    theaterLauncher.launch(intent)
-                } else {
+                if (!payload.isSupported || payload.src.isBlank()) {
                     android.util.Log.d(
                         "ClarusTheater",
                         "Direct playback unsupported (${payload.reason}). Retaining standard web fullscreen.",
                     )
+                    return@launch
+                }
+
+                when (requireComponents.settings.fullscreenVideoMode) {
+                    Settings.FULLSCREEN_VIDEO_MODE_ALWAYS_THEATER -> {
+                        launchClarusTheater(payload)
+                    }
+                    Settings.FULLSCREEN_VIDEO_MODE_NEVER -> {
+                        android.util.Log.d(
+                            "ClarusTheater",
+                            "Fullscreen video mode is 'never'. Retaining standard web fullscreen.",
+                        )
+                    }
+                    else -> {
+                        showFullscreenChoicePrompt(payload)
+                    }
                 }
             }
         }
@@ -271,6 +368,7 @@ class BrowserFragment : BaseBrowserFragment(), UserInteractionHandler, SystemIns
 
     override fun onDestroyView() {
         super.onDestroyView()
+        dismissFullscreenPrompt()
         requireComponents.core.clarusTheater.onFullscreenRequestedListener = null
     }
 
