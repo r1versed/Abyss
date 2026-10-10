@@ -9,6 +9,22 @@ data class TabPeekContent(
     val title: String?,
 )
 
+data class PeekDebugInfo(
+    val peekId: Long = 0L,
+    val sessionId: String = "",
+    val isOpen: Boolean = false,
+    val reflOk: Boolean = true,
+    val isAttached: Boolean = false,
+    val viewWidth: Int = 0,
+    val viewHeight: Int = 0,
+    val loadProgress: Int = 0,
+    val pageTitle: String = "",
+    val crashEvent: String = "none",
+    val prevClosed: Boolean = true,
+    val mainAttached: Boolean = false,
+    val mainActive: Boolean = false,
+)
+
 data class TabPeekAction(
     val id: String,
     val label: String,
@@ -41,6 +57,7 @@ sealed interface TabPeekUiState {
         val peekId: Long = 0L,
         val activeGesture: PeekGestureTarget = PeekGestureTarget.NONE,
         val isPinned: Boolean = false,
+        val debugInfo: PeekDebugInfo = PeekDebugInfo(),
     ) : TabPeekUiState {
         val commitProgress: Float
             get() = (dragUpPx / commitThresholdPx.coerceAtLeast(1f)).coerceIn(0f, 1f)

@@ -73,7 +73,15 @@ class TabPeekController(
     private var pendingHit: HitResult? = null
     private var previewTimeoutJob: Job? = null
     private var teardownJob: Job? = null
+    private var lifecycleObserver: androidx.lifecycle.DefaultLifecycleObserver? = null
     private var nextPeekId = 0L
+    private var lastPeekReleased = true
+    private var previousSessionClosed = true
+    private var previousSessionClosedBeforeThisPeek = true
+    private var lastSelectedTabId: String? = null
+    private var lastCrashEvent: String = "none"
+    private var previewUrl: String = ""
+    private var currentProgress: Int = 0
 
     private var initialTouchX = 0f
     private var initialTouchY = 0f
@@ -95,18 +103,22 @@ class TabPeekController(
     private val previewObserver = object : EngineSession.Observer {
         override fun onFirstContentfulPaint() {
             markPreviewReady()
+            updateDebugInfo()
         }
 
         override fun onProgress(progress: Int) {
+            currentProgress = progress
             if (progress >= 70) {
                 markPreviewReady()
             }
+            updateDebugInfo()
         }
 
         override fun onLoadingStateChange(loading: Boolean) {
             if (!loading) {
                 markPreviewReady()
             }
+            updateDebugInfo()
         }
 
         override fun onLocationChange(url: String, hasUserGesture: Boolean) {
@@ -115,6 +127,7 @@ class TabPeekController(
                 uiState = current.copy(
                     content = current.content.copy(url = url),
                 )
+                updateDebugInfo()
             }
         }
 
@@ -124,7 +137,20 @@ class TabPeekController(
                 uiState = current.copy(
                     content = current.content.copy(title = title),
                 )
+                updateDebugInfo()
             }
+        }
+
+        override fun onCrash() {
+            lastCrashEvent = "CRASH"
+            updateDebugInfo()
+            recreatePreviewSession()
+        }
+
+        override fun onProcessKilled() {
+            lastCrashEvent = "KILLED"
+            updateDebugInfo()
+            recreatePreviewSession()
         }
     }
 
@@ -341,11 +367,33 @@ class TabPeekController(
 
     fun start() {
         attachTouchListeners(engineView)
+        lifecycleObserver?.let { lifecycleOwner.lifecycle.removeObserver(it) }
+        val observer = object : androidx.lifecycle.DefaultLifecycleObserver {
+            override fun onPause(owner: androidx.lifecycle.LifecycleOwner) {
+                if (isPeekVisible || uiState is TabPeekUiState.Canceling) {
+                    teardown()
+                }
+            }
+            override fun onStop(owner: androidx.lifecycle.LifecycleOwner) {
+                if (isPeekVisible || uiState is TabPeekUiState.Canceling) {
+                    teardown()
+                }
+            }
+        }
+        lifecycleObserver = observer
+        lifecycleOwner.lifecycle.addObserver(observer)
         hitResultScope?.cancel()
         hitResultScope = browserStore.flowScoped(dispatcher = Dispatchers.Main) { flow ->
-            flow.map { state -> state.findTabOrCustomTabOrSelectedTab(null)?.content?.hitResult }
+            flow.map { state ->
+                val tab = state.findTabOrCustomTabOrSelectedTab(null)
+                tab?.id to tab?.content?.hitResult
+            }
                 .distinctUntilChanged()
-                .collect { hit ->
+                .collect { (tabId, hit) ->
+                    if (lastSelectedTabId != null && lastSelectedTabId != tabId && isPeekVisible) {
+                        teardown()
+                    }
+                    lastSelectedTabId = tabId
                     if (hit != null && hit.isPeekableLink() && pendingHit != hit) {
                         openPeek(hit)
                     }
@@ -354,6 +402,10 @@ class TabPeekController(
     }
 
     fun stop() {
+        lifecycleObserver?.let {
+            lifecycleOwner.lifecycle.removeObserver(it)
+            lifecycleObserver = null
+        }
         hitResultScope?.cancel()
         hitResultScope = null
         detachTouchListeners(engineView)
@@ -363,6 +415,8 @@ class TabPeekController(
     private fun openPeek(hit: HitResult) {
         teardownJob?.cancel()
         teardownJob = null
+        discardPreview()
+        removeOverlay()
         dismissLegacyMenu()
         ClarusHaptics.performTick(engineView)
 
@@ -371,6 +425,10 @@ class TabPeekController(
         val currentTabUrl = browserStore.state.selectedTab?.content?.url
         val rawHitUrl = hit.getUrl()
         val url = resolvePeekUrl(rawHitUrl, currentTabUrl)
+        previewUrl = url
+        lastCrashEvent = "none"
+        currentProgress = 0
+
         val isDownloadable = isDownloadableUrl(url)
         val primaryAction = if (isDownloadable) {
             TabPeekAction(id = ACTION_DOWNLOAD, label = "Download", isPrimary = true)
@@ -395,34 +453,22 @@ class TabPeekController(
         onPeekStarted()
         startPreview(url)
         ensureOverlay()
+        updateDebugInfo()
     }
 
     private fun startPreview(url: String) {
+        val wasPrevClosed = previousSessionClosed
         discardPreview()
+        previousSessionClosedBeforeThisPeek = wasPrevClosed
+        previousSessionClosed = false
         try {
             val context = container.context
             val activity = context.findActivity() ?: (context as? Activity)
             val ev = engine.createView(context)
             ev.setActivityContext(activity)
             previewEngineView = ev
-
-            val session = engine.createSession(private = isPrivateSession())
-            // Clear requestInterceptor so the preview session does not intercept redirects
-            // as AppLinks (e.g. YouTube app redirects which cause GeckoView to deny the load and show '302 Moved').
-            session.settings.requestInterceptor = null
-            val isDesktop = browserStore.state.selectedTab?.content?.desktopMode ?: false
-            session.toggleDesktopMode(enable = isDesktop, reload = false)
-            previewSession = session
-            session.register(previewObserver)
-
-            ev.render(session)
-            session.loadUrl(url)
-
-            previewTimeoutJob?.cancel()
-            previewTimeoutJob = lifecycleOwner.lifecycleScope.launch {
-                delay(4000)
-                markPreviewReady()
-            }
+            lastPeekReleased = false
+            updateDebugInfo()
         } catch (e: Throwable) {
             Log.e(TAG, "Failed to start preview for url: $url", e)
         }
@@ -430,7 +476,6 @@ class TabPeekController(
 
     private fun bindPreviewHost(host: FrameLayout) {
         val ev = previewEngineView ?: return
-        val session = previewSession ?: return
         val view = ev.asView()
         (view.parent as? ViewGroup)?.removeView(view)
         host.removeAllViews()
@@ -441,13 +486,74 @@ class TabPeekController(
                 FrameLayout.LayoutParams.MATCH_PARENT,
             ),
         )
-        view.post {
-            try {
-                ev.render(session)
-            } catch (e: Throwable) {
-                Log.e(TAG, "Failed to re-render preview session", e)
+
+        fun setupSessionIfReady() {
+            if (previewSession != null) return
+            if (view.isAttachedToWindow && view.width > 0 && view.height > 0) {
+                initAndRenderSession(ev, previewUrl)
             }
         }
+
+        if (view.isAttachedToWindow && view.width > 0 && view.height > 0) {
+            setupSessionIfReady()
+        } else {
+            view.addOnLayoutChangeListener(object : View.OnLayoutChangeListener {
+                override fun onLayoutChange(
+                    v: View?,
+                    left: Int, top: Int, right: Int, bottom: Int,
+                    oldLeft: Int, oldTop: Int, oldRight: Int, oldBottom: Int,
+                ) {
+                    if (view.isAttachedToWindow && view.width > 0 && view.height > 0) {
+                        view.removeOnLayoutChangeListener(this)
+                        setupSessionIfReady()
+                    }
+                }
+            })
+        }
+    }
+
+    private fun initAndRenderSession(ev: EngineView, url: String) {
+        if (url.isBlank()) return
+        try {
+            val session = engine.createSession(private = isPrivateSession())
+            session.settings.requestInterceptor = null
+            val isDesktop = browserStore.state.selectedTab?.content?.desktopMode ?: false
+            session.toggleDesktopMode(enable = isDesktop, reload = false)
+            previewSession = session
+            session.register(previewObserver)
+
+            ev.render(session)
+            setGeckoSessionFocusAndPriority(session, focused = true)
+            session.loadUrl(url)
+
+            updateDebugInfo()
+
+            previewTimeoutJob?.cancel()
+            previewTimeoutJob = lifecycleOwner.lifecycleScope.launch {
+                delay(4000)
+                markPreviewReady()
+            }
+        } catch (e: Throwable) {
+            Log.e(TAG, "Failed to initialize preview session for url: $url", e)
+        }
+    }
+
+    private fun recreatePreviewSession() {
+        val ev = previewEngineView ?: return
+        val url = previewUrl.ifBlank { return }
+        val oldSession = previewSession
+        if (oldSession != null) {
+            oldSession.unregister(previewObserver)
+            setGeckoSessionFocusAndPriority(oldSession, focused = false)
+            try {
+                oldSession.close()
+                previousSessionClosed = true
+            } catch (e: Throwable) {
+                Log.w(TAG, "Error closing previewSession on recreate", e)
+            }
+        }
+        previewSession = null
+        initAndRenderSession(ev, url)
     }
 
     private fun markPreviewReady() {
@@ -460,20 +566,33 @@ class TabPeekController(
     private fun discardPreview() {
         previewTimeoutJob?.cancel()
         previewTimeoutJob = null
-        previewSession?.unregister(previewObserver)
-        try {
-            previewEngineView?.asView()?.let { (it.parent as? ViewGroup)?.removeView(it) }
-            previewEngineView?.release()
-        } catch (e: Throwable) {
-            Log.w(TAG, "Error releasing previewEngineView", e)
+        val sess = previewSession
+        if (sess != null) {
+            sess.unregister(previewObserver)
+            setGeckoSessionFocusAndPriority(sess, focused = false)
+            try {
+                sess.close()
+                previousSessionClosed = true
+            } catch (e: Throwable) {
+                Log.w(TAG, "Error closing previewSession", e)
+            }
         }
-        try {
-            previewSession?.close()
-        } catch (e: Throwable) {
-            Log.w(TAG, "Error closing previewSession", e)
+        val ev = previewEngineView
+        if (ev != null) {
+            try {
+                ev.asView().let { (it.parent as? ViewGroup)?.removeView(it) }
+                ev.release()
+            } catch (e: Throwable) {
+                Log.w(TAG, "Error releasing previewEngineView", e)
+            }
         }
         previewEngineView = null
         previewSession = null
+        lastPeekReleased = true
+
+        // Restore focus on main tab's session
+        val mainTabSession = browserStore.state.selectedTab?.engineState?.engineSession
+        setGeckoSessionFocusAndPriority(mainTabSession, focused = true)
     }
 
     private fun commit(private: Boolean) {
@@ -507,6 +626,7 @@ class TabPeekController(
         uiState = TabPeekUiState.Canceling
         if (wasVisible) ClarusHaptics.performTick(engineView)
         consumeHit()
+        discardPreview()
         teardownJob?.cancel()
         teardownJob = lifecycleOwner.lifecycleScope.launch {
             delay(SNAP_SHUT_MS.toLong())
@@ -540,8 +660,69 @@ class TabPeekController(
         onPeekDismissed()
     }
 
+    private fun extractGeckoSession(session: EngineSession?): Pair<org.mozilla.geckoview.GeckoSession?, Boolean> {
+        if (session == null) return null to true
+        return try {
+            val field = try {
+                session.javaClass.getDeclaredField("geckoSession")
+            } catch (_: NoSuchFieldException) {
+                session.javaClass.declaredFields.firstOrNull {
+                    it.type.name.contains("GeckoSession") || it.name.startsWith("geckoSession")
+                }
+            }
+            if (field != null) {
+                field.isAccessible = true
+                val gs = field.get(session) as? org.mozilla.geckoview.GeckoSession
+                gs to (gs != null)
+            } else {
+                null to false
+            }
+        } catch (_: Throwable) {
+            null to false
+        }
+    }
+
+    private fun setGeckoSessionFocusAndPriority(session: EngineSession?, focused: Boolean) {
+        val (gs, _) = extractGeckoSession(session)
+        if (gs != null) {
+            try {
+                gs.setFocused(focused)
+            } catch (e: Throwable) {
+                Log.w(TAG, "Failed to set focus on GeckoSession", e)
+            }
+        }
+    }
+
+    private fun updateDebugInfo() {
+        val current = uiState as? TabPeekUiState.Peeking ?: return
+        val ev = previewEngineView?.asView()
+        val sess = previewSession
+        val (gs, reflOk) = extractGeckoSession(sess)
+        val isOpen = gs?.isOpen ?: false
+        val mainTabSession = browserStore.state.selectedTab?.engineState?.engineSession
+        val (mainGs, _) = extractGeckoSession(mainTabSession)
+        val mainActive = mainGs?.isOpen == true
+
+        val info = PeekDebugInfo(
+            peekId = current.peekId,
+            sessionId = sess?.let { Integer.toHexString(it.hashCode()) } ?: "none",
+            isOpen = isOpen,
+            reflOk = reflOk,
+            isAttached = ev?.isAttachedToWindow == true,
+            viewWidth = ev?.width ?: 0,
+            viewHeight = ev?.height ?: 0,
+            loadProgress = currentProgress,
+            pageTitle = current.content.title ?: "",
+            crashEvent = lastCrashEvent,
+            prevClosed = previousSessionClosedBeforeThisPeek,
+            mainAttached = engineView.isAttachedToWindow,
+            mainActive = mainActive,
+        )
+        uiState = current.copy(debugInfo = info)
+    }
+
     private fun ensureOverlay() {
-        if (overlay != null) return
+        removeOverlay()
         val cv = ComposeView(container.context).apply {
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setOnTouchListener(touchListener)

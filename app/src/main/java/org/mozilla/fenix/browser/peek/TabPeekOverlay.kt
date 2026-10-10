@@ -301,6 +301,26 @@ fun TabPeekOverlay(
                         }
                     }
 
+                    // TEMPORARY ON-SCREEN DEBUG LINE (ITEM 1b)
+                    val d = peeking.debugInfo
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.TopStart)
+                            .padding(6.dp)
+                            .background(Color.Black.copy(alpha = 0.82f), RoundedCornerShape(6.dp))
+                            .padding(horizontal = 6.dp, vertical = 4.dp),
+                    ) {
+                        Text(
+                            text = "DEBUG: peek=#${d.peekId} sess=${d.sessionId} open=${d.isOpen} refl=${if (d.reflOk) "ok" else "FAIL"} gv_att=${d.isAttached} size=${d.viewWidth}x${d.viewHeight} prog=${d.loadProgress}% title='${d.pageTitle.take(15)}' crash=${d.crashEvent} prev_closed=${if (d.prevClosed) "yes" else "no"} main_att=${d.mainAttached} main_active=${d.mainActive}",
+                            style = androidx.compose.ui.text.TextStyle(
+                                fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                                fontSize = 8.5.sp,
+                                color = Color(0xFFFBBF24),
+                                lineHeight = 11.sp,
+                            ),
+                        )
+                    }
+
                     // Loading spinner
                     if (!peeking.previewReady) {
                         Box(

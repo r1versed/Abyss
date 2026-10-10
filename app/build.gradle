@@ -48,8 +48,8 @@ android {
         applicationId "io.github.avgdevio.clarus"
         minSdk config.minSdkVersion
         targetSdk config.targetSdkVersion
-        versionCode 3
-        versionName "1.0.2643"
+        versionCode 4
+        versionName "1.0.2644"
         vectorDrawables.useSupportLibrary = true
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         testInstrumentationRunnerArguments clearPackageData: 'true'
@@ -362,7 +362,7 @@ androidComponents {
             // builds.
             def resolvedVersionName = buildType == 'nightly' ?
                     Config.nightlyVersionName(project) :
-                    (Config.releaseVersionName(project) ?: "1.0.2643")
+                    (Config.releaseVersionName(project) ?: "1.0.2644")
             project.logger.debug("versionName override: $resolvedVersionName")
 
             variant.outputs.each { output ->
