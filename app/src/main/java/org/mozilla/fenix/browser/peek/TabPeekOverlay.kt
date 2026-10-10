@@ -101,7 +101,7 @@ fun TabPeekOverlay(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.54f))
+            .background(Color.Black.copy(alpha = 0.60f))
             .clickable(
                 indication = null,
                 interactionSource = remember { MutableInteractionSource() },
@@ -114,6 +114,7 @@ fun TabPeekOverlay(
                 .clickable(
                     indication = null,
                     interactionSource = remember { MutableInteractionSource() },
+                    enabled = !peeking.isPinned,
                     onClick = {},
                 )
                 .graphicsLayer {
@@ -122,14 +123,14 @@ fun TabPeekOverlay(
                     translationY = (-peeking.dragUpPx * 0.15f) + (peeking.dragDownPx * 0.15f)
                     translationX = (-peeking.dragLeftPx * 0.15f) + (peeking.dragRightPx * 0.15f)
                 }
-                .fillMaxWidth(0.94f)
-                .fillMaxHeight(0.87f),
-            shape = RoundedCornerShape(24.dp),
+                .fillMaxWidth(0.97f)
+                .fillMaxHeight(0.96f),
+            shape = RoundedCornerShape(20.dp),
             elevation = ClarusGlassTokens.Elevation.Level3,
             isDarkTheme = isDark,
             isPrivate = isPrivate,
             isActive = peeking.activeGesture != PeekGestureTarget.NONE,
-            blurRadius = ClarusGlassTokens.Blur.Heavy,
+            blurRadius = 0.dp,
         ) {
             Column(
                 modifier = Modifier
