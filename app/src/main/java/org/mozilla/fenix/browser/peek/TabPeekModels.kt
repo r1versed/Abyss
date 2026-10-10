@@ -19,6 +19,7 @@ enum class PeekGestureTarget {
     NONE,
     NEW_TAB,      // Up
     PRIVATE_TAB,  // Left
+    PIN,          // Right
     ACTIONS,      // Down
 }
 
@@ -34,15 +35,19 @@ sealed interface TabPeekUiState {
         val dragDownPx: Float = 0f,
         val commitThresholdPx: Float = COMMIT_DRAG_THRESHOLD_DP * 2.75f,
         val privateThresholdPx: Float = PRIVATE_DRAG_THRESHOLD_DP * 2.75f,
+        val pinThresholdPx: Float = PIN_DRAG_THRESHOLD_DP * 2.75f,
         val actionsThresholdPx: Float = ACTIONS_DRAG_THRESHOLD_DP * 2.75f,
         val previewReady: Boolean = false,
         val peekId: Long = 0L,
         val activeGesture: PeekGestureTarget = PeekGestureTarget.NONE,
+        val isPinned: Boolean = false,
     ) : TabPeekUiState {
         val commitProgress: Float
             get() = (dragUpPx / commitThresholdPx.coerceAtLeast(1f)).coerceIn(0f, 1f)
         val privateProgress: Float
             get() = (dragLeftPx / privateThresholdPx.coerceAtLeast(1f)).coerceIn(0f, 1f)
+        val pinProgress: Float
+            get() = (dragRightPx / pinThresholdPx.coerceAtLeast(1f)).coerceIn(0f, 1f)
         val actionsProgress: Float
             get() = (dragDownPx / actionsThresholdPx.coerceAtLeast(1f)).coerceIn(0f, 1f)
     }
@@ -53,6 +58,7 @@ sealed interface TabPeekUiState {
 
 const val COMMIT_DRAG_THRESHOLD_DP: Float = 140f
 const val PRIVATE_DRAG_THRESHOLD_DP: Float = 130f
+const val PIN_DRAG_THRESHOLD_DP: Float = 130f
 const val ACTIONS_DRAG_THRESHOLD_DP: Float = 130f
 const val COMMIT_DRAG_THRESHOLD_PX: Float = 400f
 const val PRIVATE_DRAG_THRESHOLD_PX: Float = 360f

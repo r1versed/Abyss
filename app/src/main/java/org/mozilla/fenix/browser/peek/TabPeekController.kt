@@ -80,6 +80,7 @@ class TabPeekController(
     private var hasInitialTouch = false
     private var passedCommitThreshold = false
     private var passedPrivateThreshold = false
+    private var passedPinThreshold = false
     private var passedActionsThreshold = false
     private val actionBounds = mutableMapOf<String, Rect>()
 
@@ -148,9 +149,15 @@ class TabPeekController(
                     hasInitialTouch = false
                     passedCommitThreshold = false
                     passedPrivateThreshold = false
+                    passedPinThreshold = false
                     passedActionsThreshold = false
                 }
             }
+            return false
+        }
+
+        val peekingState = uiState as? TabPeekUiState.Peeking
+        if (peekingState?.isPinned == true) {
             return false
         }
 
@@ -161,6 +168,7 @@ class TabPeekController(
                 hasInitialTouch = true
                 passedCommitThreshold = false
                 passedPrivateThreshold = false
+                passedPinThreshold = false
                 passedActionsThreshold = false
             }
 
@@ -180,11 +188,13 @@ class TabPeekController(
                 val density = container.resources.displayMetrics.density
                 val commitThresholdPx = COMMIT_DRAG_THRESHOLD_DP * density
                 val privateThresholdPx = PRIVATE_DRAG_THRESHOLD_DP * density
+                val pinThresholdPx = PIN_DRAG_THRESHOLD_DP * density
                 val actionsThresholdPx = ACTIONS_DRAG_THRESHOLD_DP * density
 
                 val dominantGesture = when {
                     dragUp >= dragLeft && dragUp >= dragRight && dragUp >= dragDown && dragUp > 30f -> PeekGestureTarget.NEW_TAB
                     dragLeft >= dragUp && dragLeft >= dragRight && dragLeft >= dragDown && dragLeft > 30f -> PeekGestureTarget.PRIVATE_TAB
+                    dragRight >= dragUp && dragRight >= dragLeft && dragRight >= dragDown && dragRight > 30f -> PeekGestureTarget.PIN
                     dragDown >= dragUp && dragDown >= dragLeft && dragDown >= dragRight && dragDown > 30f -> PeekGestureTarget.ACTIONS
                     else -> PeekGestureTarget.NONE
                 }
@@ -198,6 +208,7 @@ class TabPeekController(
                         dragDownPx = dragDown,
                         commitThresholdPx = commitThresholdPx,
                         privateThresholdPx = privateThresholdPx,
+                        pinThresholdPx = pinThresholdPx,
                         actionsThresholdPx = actionsThresholdPx,
                         activeGesture = dominantGesture,
                     )
@@ -218,6 +229,14 @@ class TabPeekController(
                             passedPrivateThreshold = true
                         } else if (dragLeft < privateThresholdPx) {
                             passedPrivateThreshold = false
+                        }
+                    }
+                    PeekGestureTarget.PIN -> {
+                        if (dragRight >= pinThresholdPx && !passedPinThreshold) {
+                            ClarusHaptics.performTick(engineView)
+                            passedPinThreshold = true
+                        } else if (dragRight < pinThresholdPx) {
+                            passedPinThreshold = false
                         }
                     }
                     PeekGestureTarget.ACTIONS -> {
@@ -261,6 +280,10 @@ class TabPeekController(
                         commit(private = true)
                     }
 
+                    peeking != null && peeking.activeGesture == PeekGestureTarget.PIN && peeking.pinProgress >= 1f -> {
+                        pin()
+                    }
+
                     else -> {
                         cancelPeek()
                     }
@@ -268,6 +291,7 @@ class TabPeekController(
                 hasInitialTouch = false
                 passedCommitThreshold = false
                 passedPrivateThreshold = false
+                passedPinThreshold = false
                 passedActionsThreshold = false
                 return true
             }
@@ -277,6 +301,7 @@ class TabPeekController(
                 hasInitialTouch = false
                 passedCommitThreshold = false
                 passedPrivateThreshold = false
+                passedPinThreshold = false
                 passedActionsThreshold = false
                 return true
             }
@@ -363,6 +388,7 @@ class TabPeekController(
             actions = actions,
             commitThresholdPx = COMMIT_DRAG_THRESHOLD_DP * density,
             privateThresholdPx = PRIVATE_DRAG_THRESHOLD_DP * density,
+            pinThresholdPx = PIN_DRAG_THRESHOLD_DP * density,
             actionsThresholdPx = ACTIONS_DRAG_THRESHOLD_DP * density,
             peekId = nextPeekId,
         )
@@ -463,6 +489,19 @@ class TabPeekController(
         teardown()
     }
 
+    private fun pin() {
+        val current = uiState as? TabPeekUiState.Peeking ?: return
+        ClarusHaptics.performTick(engineView)
+        uiState = current.copy(
+            isPinned = true,
+            activeGesture = PeekGestureTarget.NONE,
+            dragUpPx = 0f,
+            dragLeftPx = 0f,
+            dragRightPx = 0f,
+            dragDownPx = 0f,
+        )
+    }
+
     private fun cancelPeek() {
         val wasVisible = uiState is TabPeekUiState.Peeking
         uiState = TabPeekUiState.Canceling
@@ -495,6 +534,7 @@ class TabPeekController(
         hasInitialTouch = false
         passedCommitThreshold = false
         passedPrivateThreshold = false
+        passedPinThreshold = false
         passedActionsThreshold = false
         actionBounds.clear()
         onPeekDismissed()
@@ -525,6 +565,7 @@ class TabPeekController(
                         onDismiss = { cancelPeek() },
                         onCommit = { commit(private = false) },
                         onOpenPrivate = { commit(private = true) },
+                        onPin = { pin() },
                         onDrag = { up, left ->
                             val current = uiState
                             if (current is TabPeekUiState.Peeking) {
@@ -547,6 +588,10 @@ class TabPeekController(
                 behavior = object : CoordinatorLayout.Behavior<View>() {
                     override fun onInterceptTouchEvent(parent: CoordinatorLayout, child: View, ev: MotionEvent): Boolean {
                         if (isPeekVisible) {
+                            val peeking = uiState as? TabPeekUiState.Peeking
+                            if (peeking?.isPinned == true) {
+                                return false
+                            }
                             handleTouchEvent(ev)
                             return true
                         }
@@ -554,6 +599,10 @@ class TabPeekController(
                     }
 
                     override fun onTouchEvent(parent: CoordinatorLayout, child: View, ev: MotionEvent): Boolean {
+                        val peeking = uiState as? TabPeekUiState.Peeking
+                        if (peeking?.isPinned == true) {
+                            return false
+                        }
                         return handleTouchEvent(ev)
                     }
                 }

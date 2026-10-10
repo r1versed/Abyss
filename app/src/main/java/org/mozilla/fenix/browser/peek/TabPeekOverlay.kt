@@ -17,6 +17,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -28,6 +29,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -77,6 +80,7 @@ fun TabPeekOverlay(
     onDismiss: () -> Unit = {},
     onCommit: () -> Unit = {},
     onOpenPrivate: () -> Unit = {},
+    onPin: () -> Unit = {},
     onDrag: (upPx: Float, leftPx: Float) -> Unit = { _, _ -> },
     onActionBounds: (id: String, bounds: Rect) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier,
@@ -175,21 +179,51 @@ fun TabPeekOverlay(
                             )
 
                             // Status badge
-                            Box(
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .background(Color.White.copy(alpha = 0.08f))
-                                    .padding(horizontal = 7.dp, vertical = 2.dp),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                Text(
-                                    text = "Link Peek",
-                                    style = FirefoxTheme.typography.caption.copy(
-                                        fontSize = 10.sp,
-                                        fontWeight = FontWeight.Medium,
-                                    ),
-                                    color = Color(0xFFF59E0B),
-                                )
+                            if (peeking.isPinned) {
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(Color(0xFFF59E0B).copy(alpha = 0.22f))
+                                        .padding(horizontal = 7.dp, vertical = 2.dp),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                    ) {
+                                        Icon(
+                                            painter = painterResource(iconsR.drawable.mozac_ic_pin_24),
+                                            contentDescription = null,
+                                            tint = Color(0xFFF59E0B),
+                                            modifier = Modifier.size(11.dp),
+                                        )
+                                        Text(
+                                            text = "Pinned",
+                                            style = FirefoxTheme.typography.caption.copy(
+                                                fontSize = 10.sp,
+                                                fontWeight = FontWeight.Bold,
+                                            ),
+                                            color = Color(0xFFF59E0B),
+                                        )
+                                    }
+                                }
+                            } else {
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(Color.White.copy(alpha = 0.08f))
+                                        .padding(horizontal = 7.dp, vertical = 2.dp),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    Text(
+                                        text = "Link Peek",
+                                        style = FirefoxTheme.typography.caption.copy(
+                                            fontSize = 10.sp,
+                                            fontWeight = FontWeight.Medium,
+                                        ),
+                                        color = Color(0xFFF59E0B),
+                                    )
+                                }
                             }
                         }
 
@@ -200,6 +234,38 @@ fun TabPeekOverlay(
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                         )
+                    }
+
+                    if (peeking.isPinned) {
+                        Button(
+                            onClick = onCommit,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFFF59E0B),
+                                contentColor = Color(0xFF1C1410),
+                            ),
+                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.height(30.dp),
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            ) {
+                                Icon(
+                                    painter = painterResource(iconsR.drawable.mozac_ic_tab_24),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(13.dp),
+                                )
+                                Text(
+                                    text = "Open Tab",
+                                    style = FirefoxTheme.typography.caption.copy(
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                    ),
+                                )
+                            }
+                        }
+                        Spacer(Modifier.width(4.dp))
                     }
 
                     IconButton(
@@ -261,13 +327,15 @@ fun TabPeekOverlay(
                         }
                     }
 
-                    // Radial Gesture HUD Guide (Active when dragging)
-                    RadialGestureHud(
-                        peeking = peeking,
-                        isDark = isDark,
-                        isPrivate = isPrivate,
-                        modifier = Modifier.fillMaxSize(),
-                    )
+                    // Radial Gesture HUD Guide (Active when dragging and not pinned)
+                    if (!peeking.isPinned) {
+                        RadialGestureHud(
+                            peeking = peeking,
+                            isDark = isDark,
+                            isPrivate = isPrivate,
+                            modifier = Modifier.fillMaxSize(),
+                        )
+                    }
                 }
 
                 Spacer(Modifier.height(12.dp))
@@ -338,6 +406,15 @@ private fun RadialGestureHud(
                 isActive = peeking.activeGesture == PeekGestureTarget.PRIVATE_TAB,
                 progress = peeking.privateProgress,
                 modifier = Modifier.align(Alignment.CenterStart),
+            )
+
+            // RIGHT: Pin
+            GestureIndicator(
+                label = "Pin",
+                iconRes = iconsR.drawable.mozac_ic_pin_24,
+                isActive = peeking.activeGesture == PeekGestureTarget.PIN,
+                progress = peeking.pinProgress,
+                modifier = Modifier.align(Alignment.CenterEnd),
             )
 
             // DOWN: Actions
