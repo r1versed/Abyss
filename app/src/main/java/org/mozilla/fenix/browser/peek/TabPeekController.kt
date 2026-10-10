@@ -70,6 +70,8 @@ class TabPeekController(
     private var previewEngineView: EngineView? = null
     private var pendingHit: HitResult? = null
     private var previewTimeoutJob: Job? = null
+    private var teardownJob: Job? = null
+    private var nextPeekId = 0L
 
     private var initialTouchX = 0f
     private var initialTouchY = 0f
@@ -104,7 +106,6 @@ class TabPeekController(
         }
 
         override fun onLocationChange(url: String, hasUserGesture: Boolean) {
-            Log.e("PEEK_DEBUG", "preview onLocationChange: url='$url', hasUserGesture=$hasUserGesture")
             val current = uiState
             if (current is TabPeekUiState.Peeking && url.isNotBlank() && url != "about:blank") {
                 uiState = current.copy(
@@ -114,7 +115,6 @@ class TabPeekController(
         }
 
         override fun onTitleChange(title: String) {
-            Log.e("PEEK_DEBUG", "preview onTitleChange: title='$title'")
             val current = uiState
             if (current is TabPeekUiState.Peeking && title.isNotBlank()) {
                 uiState = current.copy(
@@ -131,12 +131,19 @@ class TabPeekController(
 
     private fun handleTouchEvent(event: MotionEvent): Boolean {
         if (!isPeekVisible) {
-            if (event.actionMasked == MotionEvent.ACTION_DOWN) {
-                initialTouchX = event.rawX
-                initialTouchY = event.rawY
-                hasInitialTouch = true
-                passedCommitThreshold = false
-                passedPrivateThreshold = false
+            when (event.actionMasked) {
+                MotionEvent.ACTION_DOWN -> {
+                    initialTouchX = event.rawX
+                    initialTouchY = event.rawY
+                    hasInitialTouch = true
+                    passedCommitThreshold = false
+                    passedPrivateThreshold = false
+                }
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                    hasInitialTouch = false
+                    passedCommitThreshold = false
+                    passedPrivateThreshold = false
+                }
             }
             return false
         }
@@ -209,6 +216,7 @@ class TabPeekController(
                             ClarusHaptics.performClick(engineView)
                             val currentUrl = (uiState as? TabPeekUiState.Peeking)?.content?.url ?: hit.getUrl()
                             onActionRequested(hitAction, currentUrl, hit)
+                            consumeHit()
                             teardown()
                         } else {
                             cancelPeek()
@@ -296,19 +304,16 @@ class TabPeekController(
     }
 
     private fun openPeek(hit: HitResult) {
+        teardownJob?.cancel()
+        teardownJob = null
         dismissLegacyMenu()
         ClarusHaptics.performTick(engineView)
 
+        nextPeekId++
         pendingHit = hit
         val currentTabUrl = browserStore.state.selectedTab?.content?.url
         val rawHitUrl = hit.getUrl()
         val url = resolvePeekUrl(rawHitUrl, currentTabUrl)
-        Log.e("PEEK_DEBUG", "=== PEEK TRIGGERED ===")
-        Log.e("PEEK_DEBUG", "hit object: $hit")
-        Log.e("PEEK_DEBUG", "hit class: ${hit::class.java.name}")
-        Log.e("PEEK_DEBUG", "hit.src: '$rawHitUrl'")
-        Log.e("PEEK_DEBUG", "currentTabUrl: '$currentTabUrl'")
-        Log.e("PEEK_DEBUG", "resolved url: '$url'")
         val isDownloadable = isDownloadableUrl(url)
         val primaryAction = if (isDownloadable) {
             TabPeekAction(id = ACTION_DOWNLOAD, label = "Download", isPrimary = true)
@@ -326,6 +331,7 @@ class TabPeekController(
             actions = actions,
             commitThresholdPx = COMMIT_DRAG_THRESHOLD_DP * density,
             privateThresholdPx = PRIVATE_DRAG_THRESHOLD_DP * density,
+            peekId = nextPeekId,
         )
         startPreview(url)
         ensureOverlay()
@@ -396,6 +402,7 @@ class TabPeekController(
         previewTimeoutJob = null
         previewSession?.unregister(previewObserver)
         try {
+            previewEngineView?.asView()?.let { (it.parent as? ViewGroup)?.removeView(it) }
             previewEngineView?.release()
         } catch (e: Throwable) {
             Log.w(TAG, "Error releasing previewEngineView", e)
@@ -411,7 +418,6 @@ class TabPeekController(
 
     private fun commit(private: Boolean) {
         val state = uiState as? TabPeekUiState.Peeking ?: return
-        Log.e("PEEK_DEBUG", "commit: state.content.url='${state.content.url}', private=$private")
         uiState = TabPeekUiState.Committing
         ClarusHaptics.performCommit(engineView)
         consumeHit()
@@ -428,18 +434,26 @@ class TabPeekController(
         uiState = TabPeekUiState.Canceling
         if (wasVisible) ClarusHaptics.performTick(engineView)
         consumeHit()
-        lifecycleOwner.lifecycleScope.launch {
+        teardownJob?.cancel()
+        teardownJob = lifecycleOwner.lifecycleScope.launch {
             delay(SNAP_SHUT_MS.toLong())
-            teardown()
+            if (uiState is TabPeekUiState.Canceling) {
+                teardown()
+            }
         }
     }
 
     private fun consumeHit() {
-        browserStore.state.selectedTab?.id?.let { contextMenuUseCases.consumeHitResult(it) }
+        val tabId = browserStore.state.findTabOrCustomTabOrSelectedTab(null)?.id
+            ?: browserStore.state.selectedTab?.id
+        tabId?.let { contextMenuUseCases.consumeHitResult(it) }
         pendingHit = null
     }
 
     private fun teardown() {
+        teardownJob?.cancel()
+        teardownJob = null
+        consumeHit()
         discardPreview()
         removeOverlay()
         uiState = TabPeekUiState.Hidden
@@ -468,6 +482,7 @@ class TabPeekController(
                                 ClarusHaptics.performClick(engineView)
                                 val currentUrl = (uiState as? TabPeekUiState.Peeking)?.content?.url ?: hit.getUrl()
                                 onActionRequested(id, currentUrl, hit)
+                                consumeHit()
                                 teardown()
                             }
                         },
@@ -563,21 +578,17 @@ private fun Context.findActivity(): Activity? {
 }
 
 fun cleanPeekUrl(rawUrl: String): String {
-    Log.e("PEEK_DEBUG", "cleanPeekUrl: rawUrl='$rawUrl'")
     if (rawUrl.contains("google.com/url?") || rawUrl.contains("google.co/url?")) {
         runCatching {
             val uri = Uri.parse(rawUrl)
             val paramUrl = uri.getQueryParameter("url")
             val paramQ = uri.getQueryParameter("q")
             val target = paramUrl ?: paramQ
-            Log.e("PEEK_DEBUG", "cleanPeekUrl: paramUrl='$paramUrl', paramQ='$paramQ', chosen target='$target'")
             if (!target.isNullOrBlank() && (target.startsWith("http://") || target.startsWith("https://"))) {
-                Log.e("PEEK_DEBUG", "cleanPeekUrl: RETURNING target='$target'")
                 return target
             }
-        }.onFailure { Log.e("PEEK_DEBUG", "cleanPeekUrl parsing failed", it) }
+        }
     }
-    Log.e("PEEK_DEBUG", "cleanPeekUrl: RETURNING UNMODIFIED rawUrl='$rawUrl'")
     return rawUrl
 }
 

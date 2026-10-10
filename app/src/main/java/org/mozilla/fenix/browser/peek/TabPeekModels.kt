@@ -26,6 +26,7 @@ sealed interface TabPeekUiState {
         val commitThresholdPx: Float = COMMIT_DRAG_THRESHOLD_DP * 2.75f,
         val privateThresholdPx: Float = PRIVATE_DRAG_THRESHOLD_DP * 2.75f,
         val previewReady: Boolean = false,
+        val peekId: Long = 0L,
     ) : TabPeekUiState {
         val commitProgress: Float
             get() = (dragUpPx / commitThresholdPx.coerceAtLeast(1f)).coerceIn(0f, 1f)

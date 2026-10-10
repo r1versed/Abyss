@@ -28,6 +28,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -174,10 +175,13 @@ fun TabPeekOverlay(
                         .background(Color.Black.copy(alpha = 0.25f)),
                 ) {
                     if (previewFactory != null) {
-                        AndroidView(
-                            factory = { ctx -> FrameLayout(ctx).also { previewFactory(it) } },
-                            modifier = Modifier.fillMaxSize(),
-                        )
+                        key(peeking.peekId) {
+                            AndroidView(
+                                factory = { ctx -> FrameLayout(ctx).also { previewFactory(it) } },
+                                update = { host -> previewFactory(host) },
+                                modifier = Modifier.fillMaxSize(),
+                            )
+                        }
                     }
                     if (!peeking.previewReady) {
                         Box(
