@@ -4,9 +4,13 @@
 
 package org.mozilla.fenix.browser.peek
 
+import android.net.Uri
 import android.widget.FrameLayout
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -15,13 +19,16 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -40,8 +47,10 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import org.mozilla.fenix.R
 import mozilla.components.ui.icons.R as iconsR
@@ -51,8 +60,13 @@ import org.mozilla.fenix.theme.glass.ClarusGlassSurface
 import org.mozilla.fenix.theme.glass.ClarusGlassTokens
 
 /**
- * Large floating glass peek card: compact header, live preview, pill actions.
- * Gestures are handled at the engine/overlay touch level so release and drag work cleanly.
+ * Option B: Full-sheet Link Peek:
+ * - 94% screen width, 87% screen height, 24dp rounded corners.
+ * - Dimmed backdrop scrim over the current webpage.
+ * - Header with security lock, bold domain, URL caption, Link Peek / Pinned badge.
+ * - Large live preview viewport with Compose key-keyed AndroidView.
+ * - Radial gesture HUD guide (Up = New Tab, Left = Private, Right = Pin, Down = Actions).
+ * - Bottom docked action bar.
  */
 @Composable
 fun TabPeekOverlay(
@@ -71,8 +85,10 @@ fun TabPeekOverlay(
     val isDark = theme == Theme.Dark || theme == Theme.Private
     val isPrivate = theme == Theme.Private
 
+    val domain = remember(peeking.content.url) { extractDomain(peeking.content.url) }
+
     val scale by animateFloatAsState(
-        targetValue = 1f + peeking.commitProgress * 0.06f + peeking.privateProgress * 0.04f,
+        targetValue = 1f + peeking.commitProgress * 0.03f + peeking.privateProgress * 0.03f,
         tween(100),
         label = "PeekScale",
     )
@@ -80,7 +96,7 @@ fun TabPeekOverlay(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.18f))
+            .background(Color.Black.copy(alpha = 0.54f))
             .clickable(
                 indication = null,
                 interactionSource = remember { MutableInteractionSource() },
@@ -98,25 +114,29 @@ fun TabPeekOverlay(
                 .graphicsLayer {
                     scaleX = scale
                     scaleY = scale
-                    translationY = -peeking.dragUpPx * 0.25f
-                    translationX = -peeking.dragLeftPx * 0.25f
+                    translationY = (-peeking.dragUpPx * 0.15f) + (peeking.dragDownPx * 0.15f)
+                    translationX = (-peeking.dragLeftPx * 0.15f) + (peeking.dragRightPx * 0.15f)
                 }
-                .padding(horizontal = 16.dp, vertical = 28.dp)
-                .fillMaxWidth()
-                .height(520.dp),
-            shape = ClarusGlassTokens.Shapes.Card,
+                .fillMaxWidth(0.94f)
+                .fillMaxHeight(0.87f),
+            shape = RoundedCornerShape(24.dp),
             elevation = ClarusGlassTokens.Elevation.Level3,
             isDarkTheme = isDark,
             isPrivate = isPrivate,
-            isActive = peeking.commitProgress > 0.05f || peeking.privateProgress > 0.05f,
+            isActive = peeking.activeGesture != PeekGestureTarget.NONE,
             blurRadius = ClarusGlassTokens.Blur.Heavy,
         ) {
-            Column(modifier = Modifier.fillMaxSize().padding(horizontal = 14.dp, vertical = 12.dp)) {
-                // Header: icon + title + URL + close
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 14.dp, vertical = 12.dp),
+            ) {
+                // Header row
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
+                    // Security / Mode badge
                     Box(
                         modifier = Modifier
                             .size(36.dp)
@@ -128,51 +148,82 @@ fun TabPeekOverlay(
                         contentAlignment = Alignment.Center,
                     ) {
                         Icon(
-                            painter = painterResource(R.drawable.ic_clarus_private_mode),
+                            painter = painterResource(
+                                if (isPrivate) R.drawable.ic_clarus_private_mode
+                                else iconsR.drawable.mozac_ic_lock_24,
+                            ),
                             contentDescription = null,
-                            tint = if (isPrivate) Color(0xFFF59E0B) else Color(0xFFF59E0B),
-                            modifier = Modifier.size(20.dp),
+                            tint = if (isPrivate) Color(0xFFF59E0B) else MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.size(18.dp),
                         )
                     }
-                    Column(
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(horizontal = 10.dp),
-                    ) {
-                        Text(
-                            text = peeking.content.title?.takeIf { it.isNotBlank() }
-                                ?: peeking.content.url,
-                            style = FirefoxTheme.typography.subtitle1,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
+
+                    Spacer(Modifier.width(10.dp))
+
+                    // Title & URL column
+                    Column(modifier = Modifier.weight(1f)) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            Text(
+                                text = domain,
+                                style = FirefoxTheme.typography.subtitle1.copy(fontWeight = FontWeight.Bold),
+                                color = MaterialTheme.colorScheme.onSurface,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+
+                            // Status badge
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(Color.White.copy(alpha = 0.08f))
+                                    .padding(horizontal = 7.dp, vertical = 2.dp),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Text(
+                                    text = "Link Peek",
+                                    style = FirefoxTheme.typography.caption.copy(
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Medium,
+                                    ),
+                                    color = Color(0xFFF59E0B),
+                                )
+                            }
+                        }
+
                         Text(
                             text = peeking.content.url,
-                            style = FirefoxTheme.typography.caption,
+                            style = FirefoxTheme.typography.caption.copy(fontSize = 11.sp),
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                         )
                     }
-                    IconButton(onClick = onDismiss) {
+
+                    IconButton(
+                        onClick = onDismiss,
+                        modifier = Modifier.size(34.dp),
+                    ) {
                         Icon(
                             painter = painterResource(iconsR.drawable.mozac_ic_cross_24),
                             contentDescription = "Close",
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(18.dp),
                         )
                     }
                 }
 
-                Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(10.dp))
 
-                // Preview viewport
+                // Live Preview Viewport
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f)
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(Color.Black.copy(alpha = 0.25f)),
+                        .clip(RoundedCornerShape(18.dp))
+                        .background(Color.Black.copy(alpha = 0.32f)),
                 ) {
                     if (previewFactory != null) {
                         key(peeking.peekId) {
@@ -183,18 +234,20 @@ fun TabPeekOverlay(
                             )
                         }
                     }
+
+                    // Loading spinner
                     if (!peeking.previewReady) {
                         Box(
                             modifier = Modifier
                                 .fillMaxSize()
-                                .background(Color.Black.copy(alpha = 0.50f)),
+                                .background(Color.Black.copy(alpha = 0.55f)),
                             contentAlignment = Alignment.Center,
                         ) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                             ) {
-                                androidx.compose.material3.CircularProgressIndicator(
+                                CircularProgressIndicator(
                                     modifier = Modifier.size(20.dp),
                                     color = Color(0xFFF59E0B),
                                     strokeWidth = 2.5.dp,
@@ -207,42 +260,19 @@ fun TabPeekOverlay(
                             }
                         }
                     }
-                }
 
-                if (peeking.commitProgress >= 1f) {
-                    Text(
-                        text = "Release to open in new tab",
-                        style = FirefoxTheme.typography.caption,
-                        color = Color(0xFFF59E0B),
-                        modifier = Modifier.padding(top = 8.dp),
-                    )
-                } else if (peeking.commitProgress > 0.25f && peeking.dragUpPx > peeking.dragLeftPx) {
-                    Text(
-                        text = "Drag up to open in new tab",
-                        style = FirefoxTheme.typography.caption,
-                        color = Color.White.copy(alpha = 0.6f),
-                        modifier = Modifier.padding(top = 8.dp),
-                    )
-                }
-                if (peeking.privateProgress >= 1f) {
-                    Text(
-                        text = "Release to open in private tab",
-                        style = FirefoxTheme.typography.caption,
-                        color = Color(0xFFF59E0B),
-                        modifier = Modifier.padding(top = 8.dp),
-                    )
-                } else if (peeking.privateProgress > 0.25f && peeking.dragLeftPx > peeking.dragUpPx) {
-                    Text(
-                        text = "Drag left to open in private tab",
-                        style = FirefoxTheme.typography.caption,
-                        color = Color.White.copy(alpha = 0.6f),
-                        modifier = Modifier.padding(top = 8.dp),
+                    // Radial Gesture HUD Guide (Active when dragging)
+                    RadialGestureHud(
+                        peeking = peeking,
+                        isDark = isDark,
+                        isPrivate = isPrivate,
+                        modifier = Modifier.fillMaxSize(),
                     )
                 }
 
-                Spacer(Modifier.height(14.dp))
+                Spacer(Modifier.height(12.dp))
 
-                // Pill actions
+                // Docked Action Bar at bottom
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -262,6 +292,122 @@ fun TabPeekOverlay(
                     }
                 }
             }
+        }
+    }
+}
+
+/**
+ * Radial Gesture Guide Overlay:
+ * Shows 4 subtle directional HUD capsules (Up: New Tab, Left: Private, Right: Pin, Down: Actions)
+ * and highlights whichever direction the finger is currently dragging towards.
+ */
+@Composable
+private fun RadialGestureHud(
+    peeking: TabPeekUiState.Peeking,
+    isDark: Boolean,
+    isPrivate: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    val isAnyDrag = peeking.dragUpPx > 15f || peeking.dragLeftPx > 15f ||
+        peeking.dragRightPx > 15f || peeking.dragDownPx > 15f
+
+    AnimatedVisibility(
+        visible = isAnyDrag,
+        enter = fadeIn(tween(120)),
+        exit = fadeOut(tween(120)),
+        modifier = modifier,
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(12.dp),
+        ) {
+            // UP: New Tab
+            GestureIndicator(
+                label = "New Tab",
+                iconRes = iconsR.drawable.mozac_ic_tab_24,
+                isActive = peeking.activeGesture == PeekGestureTarget.NEW_TAB,
+                progress = peeking.commitProgress,
+                modifier = Modifier.align(Alignment.TopCenter),
+            )
+
+            // LEFT: Private Tab
+            GestureIndicator(
+                label = "Private",
+                iconRes = R.drawable.ic_clarus_private_mode,
+                isActive = peeking.activeGesture == PeekGestureTarget.PRIVATE_TAB,
+                progress = peeking.privateProgress,
+                modifier = Modifier.align(Alignment.CenterStart),
+            )
+
+            // DOWN: Actions
+            GestureIndicator(
+                label = "Actions",
+                iconRes = iconsR.drawable.mozac_ic_ellipsis_vertical_24,
+                isActive = peeking.activeGesture == PeekGestureTarget.ACTIONS,
+                progress = peeking.actionsProgress,
+                modifier = Modifier.align(Alignment.BottomCenter),
+            )
+        }
+    }
+}
+
+@Composable
+private fun GestureIndicator(
+    label: String,
+    iconRes: Int,
+    isActive: Boolean,
+    progress: Float,
+    modifier: Modifier = Modifier,
+) {
+    val scale = if (isActive) (1f + progress * 0.18f).coerceIn(1f, 1.25f) else 0.95f
+    val alpha = if (isActive) (0.80f + progress * 0.20f).coerceIn(0.80f, 1f) else 0.45f
+
+    Box(
+        modifier = modifier
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            }
+            .clip(RoundedCornerShape(16.dp))
+            .background(
+                if (isActive) {
+                    Brush.verticalGradient(
+                        listOf(
+                            Color(0xFFF59E0B).copy(alpha = (0.35f + progress * 0.55f).coerceIn(0.35f, 0.95f)),
+                            Color(0xFFD97706).copy(alpha = (0.25f + progress * 0.55f).coerceIn(0.25f, 0.90f)),
+                        ),
+                    )
+                } else {
+                    Brush.verticalGradient(
+                        listOf(
+                            Color.Black.copy(alpha = 0.50f),
+                            Color.Black.copy(alpha = 0.40f),
+                        ),
+                    )
+                },
+            )
+            .padding(horizontal = 10.dp, vertical = 6.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Icon(
+                painter = painterResource(iconRes),
+                contentDescription = null,
+                tint = if (isActive) Color(0xFF1C1410).takeIf { progress >= 0.9f } ?: Color(0xFFF59E0B) else Color.White.copy(alpha = alpha),
+                modifier = Modifier.size(16.dp),
+            )
+            Text(
+                text = label,
+                style = FirefoxTheme.typography.caption.copy(
+                    fontSize = 11.sp,
+                    fontWeight = if (isActive) FontWeight.Bold else FontWeight.Medium,
+                ),
+                color = if (isActive && progress >= 0.9f) Color(0xFF1C1410) else Color.White.copy(alpha = alpha),
+            )
         }
     }
 }
@@ -323,4 +469,16 @@ private fun PeekActionButton(
             )
         }
     }
+}
+
+private fun extractDomain(url: String): String {
+    return runCatching {
+        val uri = Uri.parse(url)
+        val host = uri.host
+        if (!host.isNullOrBlank()) {
+            host.removePrefix("www.")
+        } else {
+            url
+        }
+    }.getOrDefault(url)
 }

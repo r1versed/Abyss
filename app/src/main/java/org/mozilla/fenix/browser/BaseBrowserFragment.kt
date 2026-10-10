@@ -639,6 +639,12 @@ abstract class BaseBrowserFragment :
                         }
                 }
             },
+            onPeekStarted = {
+                slideToolbar(hide = true)
+            },
+            onPeekDismissed = {
+                slideToolbar(hide = false)
+            },
         ).also { it.start() }
 
         snackbarBinding.set(
@@ -1518,7 +1524,6 @@ abstract class BaseBrowserFragment :
         hit: mozilla.components.concept.engine.HitResult,
     ) {
         val url = currentUrl.ifBlank { hit.getUrl() }
-        android.util.Log.e("PEEK_DEBUG", "handlePeekAction: actionId=$actionId, currentUrl='$currentUrl', resolved='$url'")
         when (actionId) {
             TabPeekController.ACTION_OPEN_TAB -> {
                 requireComponents.useCases.fenixBrowserUseCases.loadUrlOrSearch(
@@ -1565,6 +1570,38 @@ abstract class BaseBrowserFragment :
                 startActivity(android.content.Intent.createChooser(send, null))
             }
         }
+    }
+
+    private fun slideToolbar(hide: Boolean) {
+        val toolbarView = _browserToolbar?.layout ?: return
+        val navBarView = browserNavigationBar?.layout
+        val isBottom = requireComponents.settings.shouldUseBottomToolbar
+
+        val targetY = if (hide) {
+            val h = if (toolbarView.height > 0) {
+                toolbarView.height.toFloat()
+            } else {
+                requireContext().resources.getDimension(R.dimen.browser_toolbar_height).coerceAtLeast(160f)
+            }
+            if (isBottom) h + 120f else -(h + 120f)
+        } else {
+            0f
+        }
+
+        val duration = if (hide) 220L else 200L
+        val interpolator = androidx.interpolator.view.animation.FastOutSlowInInterpolator()
+
+        toolbarView.animate()
+            .translationY(targetY)
+            .setDuration(duration)
+            .setInterpolator(interpolator)
+            .start()
+
+        navBarView?.animate()
+            ?.translationY(targetY)
+            ?.setDuration(duration)
+            ?.setInterpolator(interpolator)
+            ?.start()
     }
 
     internal fun addBlackScreen(container: ViewGroup = binding.browserLayout) {

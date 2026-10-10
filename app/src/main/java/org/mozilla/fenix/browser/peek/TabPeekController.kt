@@ -63,6 +63,8 @@ class TabPeekController(
     private val isPrivateSession: () -> Boolean = { false },
     private val onActionRequested: (actionId: String, currentUrl: String, hit: HitResult) -> Unit = { _, _, _ -> },
     private val dismissLegacyMenu: () -> Unit = { },
+    private val onPeekStarted: () -> Unit = { },
+    private val onPeekDismissed: () -> Unit = { },
 ) {
     private var overlay: ComposeView? = null
     private var hitResultScope: CoroutineScope? = null
@@ -78,6 +80,7 @@ class TabPeekController(
     private var hasInitialTouch = false
     private var passedCommitThreshold = false
     private var passedPrivateThreshold = false
+    private var passedActionsThreshold = false
     private val actionBounds = mutableMapOf<String, Rect>()
 
     private var uiState by mutableStateOf<TabPeekUiState>(TabPeekUiState.Hidden)
@@ -138,11 +141,14 @@ class TabPeekController(
                     hasInitialTouch = true
                     passedCommitThreshold = false
                     passedPrivateThreshold = false
+                    passedPinThreshold = false
+                    passedActionsThreshold = false
                 }
                 MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                     hasInitialTouch = false
                     passedCommitThreshold = false
                     passedPrivateThreshold = false
+                    passedActionsThreshold = false
                 }
             }
             return false
@@ -155,6 +161,7 @@ class TabPeekController(
                 hasInitialTouch = true
                 passedCommitThreshold = false
                 passedPrivateThreshold = false
+                passedActionsThreshold = false
             }
 
             MotionEvent.ACTION_MOVE -> {
@@ -163,38 +170,65 @@ class TabPeekController(
                     initialTouchY = event.rawY
                     hasInitialTouch = true
                 }
-                val dragUp = (initialTouchY - event.rawY).coerceAtLeast(0f)
-                val dragLeft = (initialTouchX - event.rawX).coerceAtLeast(0f)
+                val dx = event.rawX - initialTouchX
+                val dy = event.rawY - initialTouchY
+                val dragUp = (-dy).coerceAtLeast(0f)
+                val dragDown = dy.coerceAtLeast(0f)
+                val dragLeft = (-dx).coerceAtLeast(0f)
+                val dragRight = dx.coerceAtLeast(0f)
+
                 val density = container.resources.displayMetrics.density
                 val commitThresholdPx = COMMIT_DRAG_THRESHOLD_DP * density
                 val privateThresholdPx = PRIVATE_DRAG_THRESHOLD_DP * density
+                val actionsThresholdPx = ACTIONS_DRAG_THRESHOLD_DP * density
+
+                val dominantGesture = when {
+                    dragUp >= dragLeft && dragUp >= dragRight && dragUp >= dragDown && dragUp > 30f -> PeekGestureTarget.NEW_TAB
+                    dragLeft >= dragUp && dragLeft >= dragRight && dragLeft >= dragDown && dragLeft > 30f -> PeekGestureTarget.PRIVATE_TAB
+                    dragDown >= dragUp && dragDown >= dragLeft && dragDown >= dragRight && dragDown > 30f -> PeekGestureTarget.ACTIONS
+                    else -> PeekGestureTarget.NONE
+                }
 
                 val current = uiState
                 if (current is TabPeekUiState.Peeking) {
                     uiState = current.copy(
                         dragUpPx = dragUp,
                         dragLeftPx = dragLeft,
+                        dragRightPx = dragRight,
+                        dragDownPx = dragDown,
                         commitThresholdPx = commitThresholdPx,
                         privateThresholdPx = privateThresholdPx,
+                        actionsThresholdPx = actionsThresholdPx,
+                        activeGesture = dominantGesture,
                     )
                 }
 
-                if (dragUp >= commitThresholdPx && dragUp > dragLeft) {
-                    if (!passedCommitThreshold) {
-                        ClarusHaptics.performTick(engineView)
-                        passedCommitThreshold = true
+                when (dominantGesture) {
+                    PeekGestureTarget.NEW_TAB -> {
+                        if (dragUp >= commitThresholdPx && !passedCommitThreshold) {
+                            ClarusHaptics.performTick(engineView)
+                            passedCommitThreshold = true
+                        } else if (dragUp < commitThresholdPx) {
+                            passedCommitThreshold = false
+                        }
                     }
-                } else {
-                    passedCommitThreshold = false
-                }
-
-                if (dragLeft >= privateThresholdPx && dragLeft > dragUp) {
-                    if (!passedPrivateThreshold) {
-                        ClarusHaptics.performTick(engineView)
-                        passedPrivateThreshold = true
+                    PeekGestureTarget.PRIVATE_TAB -> {
+                        if (dragLeft >= privateThresholdPx && !passedPrivateThreshold) {
+                            ClarusHaptics.performTick(engineView)
+                            passedPrivateThreshold = true
+                        } else if (dragLeft < privateThresholdPx) {
+                            passedPrivateThreshold = false
+                        }
                     }
-                } else {
-                    passedPrivateThreshold = false
+                    PeekGestureTarget.ACTIONS -> {
+                        if (dragDown >= actionsThresholdPx && !passedActionsThreshold) {
+                            ClarusHaptics.performTick(engineView)
+                            passedActionsThreshold = true
+                        } else if (dragDown < actionsThresholdPx) {
+                            passedActionsThreshold = false
+                        }
+                    }
+                    else -> {}
                 }
                 return true
             }
@@ -202,19 +236,15 @@ class TabPeekController(
             MotionEvent.ACTION_UP -> {
                 val finalX = event.rawX
                 val finalY = event.rawY
-                val dragUp = if (hasInitialTouch) (initialTouchY - finalY).coerceAtLeast(0f) else 0f
-                val dragLeft = if (hasInitialTouch) (initialTouchX - finalX).coerceAtLeast(0f) else 0f
-                val density = container.resources.displayMetrics.density
-                val commitThresholdPx = COMMIT_DRAG_THRESHOLD_DP * density
-                val privateThresholdPx = PRIVATE_DRAG_THRESHOLD_DP * density
-
                 val hitAction = findActionAt(finalX, finalY)
+                val peeking = uiState as? TabPeekUiState.Peeking
+
                 when {
                     hitAction != null -> {
                         val hit = pendingHit
                         if (hit != null) {
                             ClarusHaptics.performClick(engineView)
-                            val currentUrl = (uiState as? TabPeekUiState.Peeking)?.content?.url ?: hit.getUrl()
+                            val currentUrl = peeking?.content?.url ?: hit.getUrl()
                             onActionRequested(hitAction, currentUrl, hit)
                             consumeHit()
                             teardown()
@@ -223,11 +253,11 @@ class TabPeekController(
                         }
                     }
 
-                    dragUp >= commitThresholdPx && dragUp > dragLeft -> {
+                    peeking != null && peeking.activeGesture == PeekGestureTarget.NEW_TAB && peeking.commitProgress >= 1f -> {
                         commit(private = false)
                     }
 
-                    dragLeft >= privateThresholdPx && dragLeft > dragUp -> {
+                    peeking != null && peeking.activeGesture == PeekGestureTarget.PRIVATE_TAB && peeking.privateProgress >= 1f -> {
                         commit(private = true)
                     }
 
@@ -238,6 +268,7 @@ class TabPeekController(
                 hasInitialTouch = false
                 passedCommitThreshold = false
                 passedPrivateThreshold = false
+                passedActionsThreshold = false
                 return true
             }
 
@@ -246,6 +277,7 @@ class TabPeekController(
                 hasInitialTouch = false
                 passedCommitThreshold = false
                 passedPrivateThreshold = false
+                passedActionsThreshold = false
                 return true
             }
         }
@@ -331,8 +363,10 @@ class TabPeekController(
             actions = actions,
             commitThresholdPx = COMMIT_DRAG_THRESHOLD_DP * density,
             privateThresholdPx = PRIVATE_DRAG_THRESHOLD_DP * density,
+            actionsThresholdPx = ACTIONS_DRAG_THRESHOLD_DP * density,
             peekId = nextPeekId,
         )
+        onPeekStarted()
         startPreview(url)
         ensureOverlay()
     }
@@ -461,7 +495,9 @@ class TabPeekController(
         hasInitialTouch = false
         passedCommitThreshold = false
         passedPrivateThreshold = false
+        passedActionsThreshold = false
         actionBounds.clear()
+        onPeekDismissed()
     }
 
     private fun ensureOverlay() {
