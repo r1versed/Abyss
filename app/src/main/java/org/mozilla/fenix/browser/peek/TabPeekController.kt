@@ -734,12 +734,37 @@ class TabPeekController(
                         theme = theme,
                         previewFactory = { host -> bindPreviewHost(host) },
                         onAction = { id ->
+                            val currentUrl = (uiState as? TabPeekUiState.Peeking)?.content?.url ?: pendingHit?.getUrl() ?: ""
                             val hit = pendingHit
+                            ClarusHaptics.performClick(engineView)
                             if (hit != null) {
-                                ClarusHaptics.performClick(engineView)
-                                val currentUrl = (uiState as? TabPeekUiState.Peeking)?.content?.url ?: hit.getUrl()
                                 onActionRequested(id, currentUrl, hit)
                                 consumeHit()
+                                teardown()
+                            } else if (currentUrl.isNotBlank()) {
+                                when (id) {
+                                    ACTION_OPEN_TAB -> {
+                                        fenixBrowserUseCases.loadUrlOrSearch(currentUrl, newTab = true, private = isPrivateSession())
+                                        teardown()
+                                    }
+                                    ACTION_COPY -> {
+                                        val clipboard = container.context.getSystemService(Context.CLIPBOARD_SERVICE) as? android.content.ClipboardManager
+                                        clipboard?.setPrimaryClip(android.content.ClipData.newPlainText("URL", currentUrl))
+                                        teardown()
+                                    }
+                                    ACTION_SHARE -> {
+                                        val send = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                                            type = "text/plain"
+                                            putExtra(android.content.Intent.EXTRA_TEXT, currentUrl)
+                                        }
+                                        container.context.startActivity(android.content.Intent.createChooser(send, null))
+                                        teardown()
+                                    }
+                                    else -> {
+                                        teardown()
+                                    }
+                                }
+                            } else {
                                 teardown()
                             }
                         },

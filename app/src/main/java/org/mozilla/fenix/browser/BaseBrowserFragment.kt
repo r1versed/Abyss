@@ -1572,10 +1572,21 @@ abstract class BaseBrowserFragment :
         }
     }
 
+    private var isToolbarSuppressedByPeek = false
+
     private fun slideToolbar(hide: Boolean) {
         val toolbarView = _browserToolbar?.layout ?: return
         val navBarView = browserNavigationBar?.layout
         val isBottom = requireComponents.settings.shouldUseBottomToolbar
+
+        isToolbarSuppressedByPeek = hide
+
+        if (hide) {
+            _browserToolbar?.setToolbarBehavior(requireComponents.settings.toolbarPosition, shouldDisableScroll = true)
+        } else {
+            toolbarView.visibility = View.VISIBLE
+            navBarView?.visibility = View.VISIBLE
+        }
 
         val targetY = if (hide) {
             val h = if (toolbarView.height > 0) {
@@ -1595,12 +1606,27 @@ abstract class BaseBrowserFragment :
             .translationY(targetY)
             .setDuration(duration)
             .setInterpolator(interpolator)
+            .withEndAction {
+                if (hide && isToolbarSuppressedByPeek) {
+                    toolbarView.visibility = View.INVISIBLE
+                } else if (!hide) {
+                    toolbarView.visibility = View.VISIBLE
+                    _browserToolbar?.setToolbarBehavior(requireComponents.settings.toolbarPosition, shouldDisableScroll = false)
+                }
+            }
             .start()
 
         navBarView?.animate()
             ?.translationY(targetY)
             ?.setDuration(duration)
             ?.setInterpolator(interpolator)
+            ?.withEndAction {
+                if (hide && isToolbarSuppressedByPeek) {
+                    navBarView.visibility = View.INVISIBLE
+                } else if (!hide) {
+                    navBarView.visibility = View.VISIBLE
+                }
+            }
             ?.start()
     }
 
