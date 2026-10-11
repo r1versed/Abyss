@@ -15,6 +15,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.navArgs
+import androidx.preference.DropDownPreference
 import androidx.preference.EditTextPreference
 import androidx.preference.Preference
 import androidx.preference.PreferenceCategory
@@ -134,6 +135,7 @@ class CustomizationFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFrag
         setupAddonsCustomizationCategory()
         setupSystemBehaviorCategory()
         setupOtherCustomizationCategory()
+        setupMediaCategory()
         hideAppIconPreference()
     }
 
@@ -435,6 +437,10 @@ class CustomizationFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFrag
             isChecked = context.components.settings.shouldRelinquishMemoryUnderPressure
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
+        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_hide_system_bars).apply {
+            isChecked = context.components.settings.hideSystemBars
+            onPreferenceChangeListener = SharedPreferenceUpdater()
+        }
     }
 
     private fun setupDownloadCustomizationCategory() {
@@ -447,6 +453,13 @@ class CustomizationFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFrag
     private fun setupOtherCustomizationCategory() {
         requirePreference<SwitchPreferenceCompat>(R.string.pref_key_show_fullscreen_toast).apply {
             isChecked = context.components.settings.shouldShowFullScreenToast
+            onPreferenceChangeListener = SharedPreferenceUpdater()
+        }
+    }
+
+    private fun setupMediaCategory() {
+        findPreference<DropDownPreference>(getString(R.string.pref_key_fullscreen_video_mode))?.apply {
+            value = requireComponents.settings.fullscreenVideoMode
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
     }

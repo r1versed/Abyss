@@ -253,6 +253,8 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
         )
     }
 
+    private var isImmersiveActive = false
+
     private val immersivePrefListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
         if (key == getString(R.string.pref_key_hide_system_bars)) {
             applyImmersiveMode()
@@ -573,6 +575,7 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
         }
 
         setContentView(binding.root)
+        applyImmersiveMode()
         ProfilerMarkers.addListenerForOnGlobalLayout(components.core.engine, this, binding.root)
 
         privateNotificationObserver = PrivateNotificationFeature(
@@ -1034,25 +1037,33 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
     }
 
     fun applyImmersiveMode() {
-        val enabled = components.settings.hideSystemBars
-        val windowInsetsController = WindowInsetsControllerCompat(window, window.decorView)
-        val attrs = window.attributes
-        if (enabled) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                attrs.layoutInDisplayCutoutMode =
-                    WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
-                window.attributes = attrs
+        runOnUiThread {
+            val enabled = components.settings.hideSystemBars
+            if (enabled) {
+                val windowInsetsController = WindowInsetsControllerCompat(window, window.decorView)
+                val attrs = window.attributes
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                    attrs.layoutInDisplayCutoutMode =
+                        WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+                    window.attributes = attrs
+                }
+                androidx.core.view.WindowCompat.setDecorFitsSystemWindows(window, false)
+                windowInsetsController.systemBarsBehavior =
+                    WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                windowInsetsController.hide(WindowInsetsCompat.Type.systemBars())
+                isImmersiveActive = true
+            } else if (isImmersiveActive) {
+                val windowInsetsController = WindowInsetsControllerCompat(window, window.decorView)
+                val attrs = window.attributes
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                    attrs.layoutInDisplayCutoutMode =
+                        WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_DEFAULT
+                    window.attributes = attrs
+                }
+                androidx.core.view.WindowCompat.setDecorFitsSystemWindows(window, true)
+                windowInsetsController.show(WindowInsetsCompat.Type.systemBars())
+                isImmersiveActive = false
             }
-            windowInsetsController.systemBarsBehavior =
-                WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-            windowInsetsController.hide(WindowInsetsCompat.Type.systemBars())
-        } else {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                attrs.layoutInDisplayCutoutMode =
-                    WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_DEFAULT
-                window.attributes = attrs
-            }
-            windowInsetsController.show(WindowInsetsCompat.Type.systemBars())
         }
     }
 
