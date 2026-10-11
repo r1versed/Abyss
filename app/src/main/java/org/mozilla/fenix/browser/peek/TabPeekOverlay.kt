@@ -335,7 +335,7 @@ fun TabPeekOverlay(
                     }
                 }
 
-                Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(8.dp))
 
                 // Docked Action Bar at bottom
                 Row(
@@ -500,50 +500,61 @@ private fun PeekActionButton(
     modifier: Modifier = Modifier,
 ) {
     val isActive = isPrimary || isHovered
-    ClarusGlassSurface(
+    Box(
         modifier = modifier
             .height(48.dp)
-            .clip(RoundedCornerShape(24.dp))
             .onGloballyPositioned { coords ->
                 onBoundsChanged?.invoke(id, coords.boundsInWindow())
             }
             .clickable(onClick = onClick),
-        shape = ClarusGlassTokens.Shapes.Pill,
-        elevation = if (isActive) ClarusGlassTokens.Elevation.Level3 else ClarusGlassTokens.Elevation.Level2,
-        isDarkTheme = isDark,
-        isPrivate = isPrivate,
-        isActive = isActive,
-        blurRadius = ClarusGlassTokens.Blur.Subtle,
+        contentAlignment = Alignment.Center,
     ) {
-        Box(
+        ClarusGlassSurface(
             modifier = Modifier
-                .fillMaxSize()
-                .background(
-                    brush = if (isActive) {
-                        Brush.verticalGradient(
-                            listOf(
-                                Color(0xFFF59E0B).copy(alpha = 0.92f),
-                                Color(0xFFD97706).copy(alpha = 0.88f),
-                            ),
-                        )
-                    } else {
-                        Brush.verticalGradient(
-                            listOf(
-                                Color.White.copy(alpha = 0.10f),
-                                Color.White.copy(alpha = 0.06f),
-                            ),
-                        )
-                    },
-                ),
-            contentAlignment = Alignment.Center,
+                .fillMaxWidth()
+                .height(36.dp)
+                .clip(RoundedCornerShape(18.dp)),
+            shape = ClarusGlassTokens.Shapes.Pill,
+            elevation = if (isActive) ClarusGlassTokens.Elevation.Level3 else ClarusGlassTokens.Elevation.Level1,
+            isDarkTheme = isDark,
+            isPrivate = isPrivate,
+            isActive = isActive,
+            blurRadius = ClarusGlassTokens.Blur.Subtle,
         ) {
-            Text(
-                text = label,
-                style = FirefoxTheme.typography.button,
-                color = if (isActive) Color(0xFF1C1410) else MaterialTheme.colorScheme.onSurface,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        brush = if (isActive) {
+                            Brush.verticalGradient(
+                                listOf(
+                                    Color(0xFFF59E0B).copy(alpha = 0.95f),
+                                    Color(0xFFD97706).copy(alpha = 0.90f),
+                                ),
+                            )
+                        } else {
+                            Brush.verticalGradient(
+                                listOf(
+                                    Color.White.copy(alpha = 0.10f),
+                                    Color.White.copy(alpha = 0.06f),
+                                ),
+                            )
+                        },
+                    ),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = label,
+                    style = FirefoxTheme.typography.button.copy(
+                        fontSize = 12.sp,
+                        lineHeight = 16.sp,
+                        fontWeight = if (isActive) FontWeight.Bold else FontWeight.SemiBold,
+                    ),
+                    color = if (isActive) Color(0xFF1C1410) else MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
         }
     }
 }
