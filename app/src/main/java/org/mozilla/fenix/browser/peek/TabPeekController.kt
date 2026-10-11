@@ -100,13 +100,24 @@ class TabPeekController(
     fun shouldSuppressContextMenu(): Boolean =
         isPeekVisible || pendingHit != null || uiState is TabPeekUiState.Canceling
 
+    private var currentLoadToken: Long = 0L
+
     private val previewObserver = object : EngineSession.Observer {
+        private fun isEventValid(): Boolean {
+            val state = uiState as? TabPeekUiState.Peeking ?: return false
+            if (previewUrl.isBlank() || previewUrl == "about:blank") return false
+            if (state.peekId != currentLoadToken) return false
+            return true
+        }
+
         override fun onFirstContentfulPaint() {
+            if (!isEventValid()) return
             markPreviewReady()
             updateDebugInfo()
         }
 
         override fun onProgress(progress: Int) {
+            if (!isEventValid()) return
             currentProgress = progress
             if (progress >= 70) {
                 markPreviewReady()
@@ -115,6 +126,7 @@ class TabPeekController(
         }
 
         override fun onLoadingStateChange(loading: Boolean) {
+            if (!isEventValid()) return
             if (!loading) {
                 markPreviewReady()
             }
@@ -122,6 +134,7 @@ class TabPeekController(
         }
 
         override fun onLocationChange(url: String, hasUserGesture: Boolean) {
+            if (!isEventValid()) return
             val current = uiState
             if (current is TabPeekUiState.Peeking && url.isNotBlank() && url != "about:blank") {
                 uiState = current.copy(
@@ -132,8 +145,9 @@ class TabPeekController(
         }
 
         override fun onTitleChange(title: String) {
+            if (!isEventValid()) return
             val current = uiState
-            if (current is TabPeekUiState.Peeking && title.isNotBlank()) {
+            if (current is TabPeekUiState.Peeking && title.isNotBlank() && title != "about:blank") {
                 uiState = current.copy(
                     content = current.content.copy(title = title),
                 )
@@ -366,18 +380,41 @@ class TabPeekController(
         val windowX = rawX - (screenLoc[0] - loc[0])
         val windowY = rawY - (screenLoc[1] - loc[1])
 
-        val density = container.resources.displayMetrics.density
-        val slopPx = 28f * density
+        // 1. Prefer the action whose bounds contain the finger
         for ((id, bounds) in actionBounds) {
-            if (windowX >= (bounds.left - slopPx) &&
-                windowX <= (bounds.right + slopPx) &&
-                windowY >= (bounds.top - slopPx) &&
-                windowY <= (bounds.bottom + slopPx)
+            if (windowX >= bounds.left && windowX <= bounds.right &&
+                windowY >= bounds.top && windowY <= bounds.bottom
             ) {
                 return id
             }
         }
-        return null
+
+        // 2. Otherwise find the nearest action center within slop
+        val density = container.resources.displayMetrics.density
+        val slopXPx = 12f * density
+        val slopYPx = 32f * density
+
+        var bestId: String? = null
+        var minDistanceSq = Float.MAX_VALUE
+
+        for ((id, bounds) in actionBounds) {
+            if (windowX >= (bounds.left - slopXPx) &&
+                windowX <= (bounds.right + slopXPx) &&
+                windowY >= (bounds.top - slopYPx) &&
+                windowY <= (bounds.bottom + slopYPx)
+            ) {
+                val centerX = (bounds.left + bounds.right) / 2f
+                val centerY = (bounds.top + bounds.bottom) / 2f
+                val dx = windowX - centerX
+                val dy = windowY - centerY
+                val distSq = dx * dx + dy * dy
+                if (distSq < minDistanceSq) {
+                    minDistanceSq = distSq
+                    bestId = id
+                }
+            }
+        }
+        return bestId
     }
 
     private fun executeDirectAction(actionId: String, currentUrl: String) {
@@ -467,8 +504,13 @@ class TabPeekController(
     }
 
     private fun createPreviewRequestInterceptor(): mozilla.components.concept.engine.request.RequestInterceptor {
-        val appRequestInterceptor = org.mozilla.fenix.AppRequestInterceptor(container.context)
+        val appRequestInterceptor = org.mozilla.fenix.AppRequestInterceptor(
+            context = container.context,
+            isPrivateForSession = { isPrivateSession() },
+        )
         return object : mozilla.components.concept.engine.request.RequestInterceptor {
+            override fun interceptsAppInitiatedRequests() = true
+
             override fun onLoadRequest(
                 engineSession: EngineSession,
                 uri: String,
@@ -508,12 +550,14 @@ class TabPeekController(
     private fun openPeek(hit: HitResult) {
         teardownJob?.cancel()
         teardownJob = null
-        discardPreview()
+        previewTimeoutJob?.cancel()
+        previewTimeoutJob = null
         removeOverlay()
         dismissLegacyMenu()
         ClarusHaptics.performTick(engineView)
 
         nextPeekId++
+        currentLoadToken = nextPeekId
         pendingHit = hit
         val currentTabUrl = browserStore.state.selectedTab?.content?.url
         val rawHitUrl = hit.getUrl()
@@ -551,7 +595,6 @@ class TabPeekController(
         ensureOverlay()
         updateDebugInfo()
 
-        previewTimeoutJob?.cancel()
         previewTimeoutJob = lifecycleOwner.lifecycleScope.launch {
             delay(4000)
             onPreviewTimeout()
@@ -664,6 +707,8 @@ class TabPeekController(
     private fun discardPreview() {
         previewTimeoutJob?.cancel()
         previewTimeoutJob = null
+        currentLoadToken = 0L
+        previewUrl = "about:blank"
         // Reusing session & engine view per controller lifetime:
         // Do NOT close session or release view here!
         previewSession?.let { session ->
@@ -705,7 +750,6 @@ class TabPeekController(
         uiState = TabPeekUiState.Canceling
         if (wasVisible) ClarusHaptics.performTick(engineView)
         consumeHit()
-        discardPreview()
         teardownJob?.cancel()
         teardownJob = lifecycleOwner.lifecycleScope.launch {
             delay(SNAP_SHUT_MS.toLong())
@@ -726,7 +770,6 @@ class TabPeekController(
         teardownJob?.cancel()
         teardownJob = null
         consumeHit()
-        discardPreview()
         removeOverlay()
         uiState = TabPeekUiState.Hidden
         pendingHit = null
@@ -736,6 +779,7 @@ class TabPeekController(
         passedPinThreshold = false
         passedActionsThreshold = false
         actionBounds.clear()
+        discardPreview()
         onPeekDismissed()
     }
 
@@ -769,6 +813,27 @@ class TabPeekController(
             } catch (e: Throwable) {
                 Log.w(TAG, "Failed to set focus on GeckoSession", e)
             }
+            try {
+                val setActiveMethod = gs.javaClass.methods.firstOrNull {
+                    it.name == "setActive" && it.parameterTypes.size == 1 &&
+                        (it.parameterTypes[0] == java.lang.Boolean.TYPE || it.parameterTypes[0] == java.lang.Boolean::class.java)
+                }
+                setActiveMethod?.invoke(gs, focused)
+            } catch (e: Throwable) {
+                Log.w(TAG, "Failed to set active on GeckoSession", e)
+            }
+        }
+    }
+
+    private fun isGeckoSessionActive(gs: org.mozilla.geckoview.GeckoSession?): Boolean {
+        if (gs == null) return false
+        return try {
+            val isActiveMethod = gs.javaClass.methods.firstOrNull {
+                it.name == "isActive" && it.parameterTypes.isEmpty()
+            }
+            (isActiveMethod?.invoke(gs) as? Boolean) ?: false
+        } catch (_: Throwable) {
+            false
         }
     }
 
@@ -778,14 +843,16 @@ class TabPeekController(
         val sess = previewSession
         val (gs, reflOk) = extractGeckoSession(sess)
         val isOpen = gs?.isOpen ?: false
+        val isActive = isGeckoSessionActive(gs)
         val mainTabSession = browserStore.state.selectedTab?.engineState?.engineSession
         val (mainGs, _) = extractGeckoSession(mainTabSession)
-        val mainActive = mainGs?.isOpen == true
+        val mainActive = isGeckoSessionActive(mainGs) || (mainGs?.isOpen == true)
 
         val info = PeekDebugInfo(
             peekId = current.peekId,
             sessionId = sess?.let { Integer.toHexString(it.hashCode()) } ?: "none",
             isOpen = isOpen,
+            isActive = isActive,
             reflOk = reflOk,
             isAttached = ev?.isAttachedToWindow == true,
             viewWidth = ev?.width ?: 0,

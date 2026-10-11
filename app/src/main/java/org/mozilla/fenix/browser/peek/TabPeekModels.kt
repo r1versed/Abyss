@@ -13,6 +13,7 @@ data class PeekDebugInfo(
     val peekId: Long = 0L,
     val sessionId: String = "",
     val isOpen: Boolean = false,
+    val isActive: Boolean = false,
     val reflOk: Boolean = true,
     val isAttached: Boolean = false,
     val viewWidth: Int = 0,

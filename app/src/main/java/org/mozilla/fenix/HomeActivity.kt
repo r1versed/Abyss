@@ -1047,7 +1047,6 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
                         WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
                     window.attributes = attrs
                 }
-                androidx.core.view.WindowCompat.setDecorFitsSystemWindows(window, false)
                 windowInsetsController.systemBarsBehavior =
                     WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
                 windowInsetsController.hide(WindowInsetsCompat.Type.systemBars())
@@ -1060,7 +1059,6 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
                         WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_DEFAULT
                     window.attributes = attrs
                 }
-                androidx.core.view.WindowCompat.setDecorFitsSystemWindows(window, true)
                 windowInsetsController.show(WindowInsetsCompat.Type.systemBars())
                 isImmersiveActive = false
             }

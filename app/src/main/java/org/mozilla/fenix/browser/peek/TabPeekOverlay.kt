@@ -288,7 +288,7 @@ fun TabPeekOverlay(
                             .padding(horizontal = 6.dp, vertical = 4.dp),
                     ) {
                         Text(
-                            text = "DEBUG: peek=#${d.peekId} sess=${d.sessionId} open=${d.isOpen} refl=${if (d.reflOk) "ok" else "FAIL"} gv_att=${d.isAttached} size=${d.viewWidth}x${d.viewHeight} prog=${d.loadProgress}% title='${d.pageTitle.take(15)}' crash=${d.crashEvent} prev_closed=${if (d.prevClosed) "yes" else "no"} main_att=${d.mainAttached} main_active=${d.mainActive}",
+                            text = "DEBUG: peek=#${d.peekId} sess=${d.sessionId} open=${d.isOpen} act=${d.isActive} refl=${if (d.reflOk) "ok" else "FAIL"} gv_att=${d.isAttached} size=${d.viewWidth}x${d.viewHeight} prog=${d.loadProgress}% title='${d.pageTitle.take(15)}' crash=${d.crashEvent} prev_closed=${if (d.prevClosed) "yes" else "no"} main_att=${d.mainAttached} main_active=${d.mainActive}",
                             style = androidx.compose.ui.text.TextStyle(
                                 fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
                                 fontSize = 8.5.sp,
