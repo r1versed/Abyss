@@ -58,6 +58,7 @@ sealed interface TabPeekUiState {
         val peekId: Long = 0L,
         val activeGesture: PeekGestureTarget = PeekGestureTarget.NONE,
         val isPinned: Boolean = false,
+        val hoveredActionId: String? = null,
         val debugInfo: PeekDebugInfo = PeekDebugInfo(),
     ) : TabPeekUiState {
         val commitProgress: Float

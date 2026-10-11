@@ -217,6 +217,27 @@ class TabPeekController(
                 val pinThresholdPx = PIN_DRAG_THRESHOLD_DP * density
                 val actionsThresholdPx = ACTIONS_DRAG_THRESHOLD_DP * density
 
+                val hoveredAction = findActionAt(event.rawX, event.rawY)
+                val current = uiState
+
+                if (hoveredAction != null) {
+                    val prevHovered = (current as? TabPeekUiState.Peeking)?.hoveredActionId
+                    if (hoveredAction != prevHovered) {
+                        ClarusHaptics.performTick(engineView)
+                    }
+                    if (current is TabPeekUiState.Peeking) {
+                        uiState = current.copy(
+                            dragUpPx = 0f,
+                            dragLeftPx = 0f,
+                            dragRightPx = 0f,
+                            dragDownPx = dragDown,
+                            activeGesture = PeekGestureTarget.NONE,
+                            hoveredActionId = hoveredAction,
+                        )
+                    }
+                    return true
+                }
+
                 val dominantGesture = when {
                     dragUp >= dragLeft && dragUp >= dragRight && dragUp >= dragDown && dragUp > 30f -> PeekGestureTarget.NEW_TAB
                     dragLeft >= dragUp && dragLeft >= dragRight && dragLeft >= dragDown && dragLeft > 30f -> PeekGestureTarget.PRIVATE_TAB
@@ -225,7 +246,6 @@ class TabPeekController(
                     else -> PeekGestureTarget.NONE
                 }
 
-                val current = uiState
                 if (current is TabPeekUiState.Peeking) {
                     uiState = current.copy(
                         dragUpPx = dragUp,
@@ -237,6 +257,7 @@ class TabPeekController(
                         pinThresholdPx = pinThresholdPx,
                         actionsThresholdPx = actionsThresholdPx,
                         activeGesture = dominantGesture,
+                        hoveredActionId = null,
                     )
                 }
 
@@ -281,18 +302,20 @@ class TabPeekController(
             MotionEvent.ACTION_UP -> {
                 val finalX = event.rawX
                 val finalY = event.rawY
-                val hitAction = findActionAt(finalX, finalY)
                 val peeking = uiState as? TabPeekUiState.Peeking
+                val hitAction = findActionAt(finalX, finalY) ?: peeking?.hoveredActionId
 
                 when {
                     hitAction != null -> {
                         val hit = pendingHit
+                        val currentUrl = peeking?.content?.url ?: hit?.getUrl() ?: ""
+                        ClarusHaptics.performClick(engineView)
                         if (hit != null) {
-                            ClarusHaptics.performClick(engineView)
-                            val currentUrl = peeking?.content?.url ?: hit.getUrl()
                             onActionRequested(hitAction, currentUrl, hit)
                             consumeHit()
                             teardown()
+                        } else if (currentUrl.isNotBlank()) {
+                            executeDirectAction(hitAction, currentUrl)
                         } else {
                             cancelPeek()
                         }
@@ -343,7 +366,8 @@ class TabPeekController(
         val windowX = rawX - (screenLoc[0] - loc[0])
         val windowY = rawY - (screenLoc[1] - loc[1])
 
-        val slopPx = 36f
+        val density = container.resources.displayMetrics.density
+        val slopPx = 28f * density
         for ((id, bounds) in actionBounds) {
             if (windowX >= (bounds.left - slopPx) &&
                 windowX <= (bounds.right + slopPx) &&
@@ -354,6 +378,29 @@ class TabPeekController(
             }
         }
         return null
+    }
+
+    private fun executeDirectAction(actionId: String, currentUrl: String) {
+        when (actionId) {
+            ACTION_OPEN_TAB -> {
+                fenixBrowserUseCases.loadUrlOrSearch(currentUrl, newTab = true, private = isPrivateSession())
+                teardown()
+            }
+            ACTION_COPY -> {
+                val clipboard = container.context.getSystemService(Context.CLIPBOARD_SERVICE) as? android.content.ClipboardManager
+                clipboard?.setPrimaryClip(android.content.ClipData.newPlainText("URL", currentUrl))
+                teardown()
+            }
+            ACTION_SHARE -> {
+                val send = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    putExtra(android.content.Intent.EXTRA_TEXT, currentUrl)
+                }
+                container.context.startActivity(android.content.Intent.createChooser(send, null))
+                teardown()
+            }
+            else -> teardown()
+        }
     }
 
     @SuppressLint("ClickableViewAccessibility")

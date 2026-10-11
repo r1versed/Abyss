@@ -118,10 +118,8 @@ fun TabPeekOverlay(
                     onClick = {},
                 )
                 .graphicsLayer {
-                    scaleX = scale
-                    scaleY = scale
-                    translationY = (-peeking.dragUpPx * 0.15f) + (peeking.dragDownPx * 0.15f)
-                    translationX = (-peeking.dragLeftPx * 0.15f) + (peeking.dragRightPx * 0.15f)
+                    scaleX = 1f
+                    scaleY = 1f
                 }
                 .fillMaxWidth(0.97f)
                 .fillMaxHeight(0.96f),
@@ -350,6 +348,7 @@ fun TabPeekOverlay(
                             id = action.id,
                             label = action.label,
                             isPrimary = action.isPrimary,
+                            isHovered = peeking.hoveredActionId == action.id,
                             isDark = isDark,
                             isPrivate = isPrivate,
                             onClick = { onAction(action.id) },
@@ -493,12 +492,14 @@ private fun PeekActionButton(
     id: String,
     label: String,
     isPrimary: Boolean,
+    isHovered: Boolean,
     isDark: Boolean,
     isPrivate: Boolean,
     onClick: () -> Unit,
     onBoundsChanged: ((String, Rect) -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
+    val isActive = isPrimary || isHovered
     ClarusGlassSurface(
         modifier = modifier
             .height(48.dp)
@@ -508,17 +509,17 @@ private fun PeekActionButton(
             }
             .clickable(onClick = onClick),
         shape = ClarusGlassTokens.Shapes.Pill,
-        elevation = ClarusGlassTokens.Elevation.Level2,
+        elevation = if (isActive) ClarusGlassTokens.Elevation.Level3 else ClarusGlassTokens.Elevation.Level2,
         isDarkTheme = isDark,
         isPrivate = isPrivate,
-        isActive = isPrimary,
+        isActive = isActive,
         blurRadius = ClarusGlassTokens.Blur.Subtle,
     ) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .background(
-                    brush = if (isPrimary) {
+                    brush = if (isActive) {
                         Brush.verticalGradient(
                             listOf(
                                 Color(0xFFF59E0B).copy(alpha = 0.92f),
@@ -539,7 +540,7 @@ private fun PeekActionButton(
             Text(
                 text = label,
                 style = FirefoxTheme.typography.button,
-                color = if (isPrimary) Color(0xFF1C1410) else MaterialTheme.colorScheme.onSurface,
+                color = if (isActive) Color(0xFF1C1410) else MaterialTheme.colorScheme.onSurface,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
