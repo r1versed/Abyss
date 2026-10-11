@@ -815,8 +815,7 @@ class TabPeekController(
             }
             try {
                 val setActiveMethod = gs.javaClass.methods.firstOrNull {
-                    it.name == "setActive" && it.parameterTypes.size == 1 &&
-                        (it.parameterTypes[0] == java.lang.Boolean.TYPE || it.parameterTypes[0] == java.lang.Boolean::class.java)
+                    it.name == "setActive" && it.parameterTypes.size == 1
                 }
                 setActiveMethod?.invoke(gs, focused)
             } catch (e: Throwable) {
