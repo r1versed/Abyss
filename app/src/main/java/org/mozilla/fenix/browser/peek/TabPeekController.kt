@@ -466,6 +466,45 @@ class TabPeekController(
         ev?.release()
     }
 
+    private fun createPreviewRequestInterceptor(): mozilla.components.concept.engine.request.RequestInterceptor {
+        val appRequestInterceptor = org.mozilla.fenix.AppRequestInterceptor(container.context)
+        return object : mozilla.components.concept.engine.request.RequestInterceptor {
+            override fun onLoadRequest(
+                engineSession: EngineSession,
+                uri: String,
+                lastUri: String?,
+                hasUserGesture: Boolean,
+                isSameDomain: Boolean,
+                isRedirect: Boolean,
+                isDirectNavigation: Boolean,
+                isSubframeRequest: Boolean,
+            ): mozilla.components.concept.engine.request.RequestInterceptor.InterceptionResponse? {
+                return if (uri.startsWith("${org.mozilla.fenix.AppRequestInterceptor.ERROR_PAGE_ACTION_SCHEME}://")) {
+                    appRequestInterceptor.onLoadRequest(
+                        engineSession,
+                        uri,
+                        lastUri,
+                        hasUserGesture,
+                        isSameDomain,
+                        isRedirect,
+                        isDirectNavigation,
+                        isSubframeRequest,
+                    )
+                } else {
+                    null
+                }
+            }
+
+            override fun onErrorRequest(
+                session: EngineSession,
+                errorType: mozilla.components.browser.errorpages.ErrorType,
+                uri: String?,
+            ): mozilla.components.concept.engine.request.RequestInterceptor.ErrorResponse {
+                return appRequestInterceptor.onErrorRequest(session, errorType, uri)
+            }
+        }
+    }
+
     private fun openPeek(hit: HitResult) {
         teardownJob?.cancel()
         teardownJob = null
@@ -532,7 +571,7 @@ class TabPeekController(
         var session = previewSession
         if (session == null) {
             val s = engine.createSession(private = isPrivateSession())
-            s.settings.requestInterceptor = null
+            s.settings.requestInterceptor = createPreviewRequestInterceptor()
             val isDesktop = browserStore.state.selectedTab?.content?.desktopMode ?: false
             s.toggleDesktopMode(enable = isDesktop, reload = false)
             s.register(previewObserver)
@@ -598,7 +637,7 @@ class TabPeekController(
             }
         }
         val session = engine.createSession(private = isPrivateSession())
-        session.settings.requestInterceptor = null
+        session.settings.requestInterceptor = createPreviewRequestInterceptor()
         val isDesktop = browserStore.state.selectedTab?.content?.desktopMode ?: false
         session.toggleDesktopMode(enable = isDesktop, reload = false)
         previewSession = session
