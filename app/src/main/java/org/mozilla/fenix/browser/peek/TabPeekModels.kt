@@ -54,6 +54,7 @@ sealed interface TabPeekUiState {
         val pinThresholdPx: Float = PIN_DRAG_THRESHOLD_DP * 2.75f,
         val actionsThresholdPx: Float = ACTIONS_DRAG_THRESHOLD_DP * 2.75f,
         val previewReady: Boolean = false,
+        val previewTimedOut: Boolean = false,
         val peekId: Long = 0L,
         val activeGesture: PeekGestureTarget = PeekGestureTarget.NONE,
         val isPinned: Boolean = false,

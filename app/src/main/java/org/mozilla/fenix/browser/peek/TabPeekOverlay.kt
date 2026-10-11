@@ -273,13 +273,11 @@ fun TabPeekOverlay(
                         .background(Color.Black.copy(alpha = 0.32f)),
                 ) {
                     if (previewFactory != null) {
-                        key(peeking.peekId) {
-                            AndroidView(
-                                factory = { ctx -> FrameLayout(ctx).also { previewFactory(it) } },
-                                update = { host -> previewFactory(host) },
-                                modifier = Modifier.fillMaxSize(),
-                            )
-                        }
+                        AndroidView(
+                            factory = { ctx -> FrameLayout(ctx).also { previewFactory(it) } },
+                            update = { /* Side-effect free: do not re-add or re-attach engine view */ },
+                            modifier = Modifier.fillMaxSize(),
+                        )
                     }
 
                     // TEMPORARY ON-SCREEN DEBUG LINE (ITEM 1b)
@@ -320,7 +318,7 @@ fun TabPeekOverlay(
                                     strokeWidth = 2.5.dp,
                                 )
                                 Text(
-                                    text = "Loading preview...",
+                                    text = if (peeking.previewTimedOut) "Still loading..." else "Loading preview...",
                                     style = FirefoxTheme.typography.caption,
                                     color = MaterialTheme.colorScheme.onSurface,
                                 )

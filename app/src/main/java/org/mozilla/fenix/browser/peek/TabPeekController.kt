@@ -410,6 +410,13 @@ class TabPeekController(
         hitResultScope = null
         detachTouchListeners(engineView)
         teardown()
+        val s = previewSession
+        previewSession = null
+        s?.unregister(previewObserver)
+        s?.close()
+        val ev = previewEngineView
+        previewEngineView = null
+        ev?.release()
     }
 
     private fun openPeek(hit: HitResult) {
@@ -428,6 +435,10 @@ class TabPeekController(
         previewUrl = url
         lastCrashEvent = "none"
         currentProgress = 0
+
+        val (_, session) = getOrCreatePreview()
+        session.loadUrl(url)
+        setGeckoSessionFocusAndPriority(session, focused = true)
 
         val isDownloadable = isDownloadableUrl(url)
         val primaryAction = if (isDownloadable) {
@@ -451,32 +462,45 @@ class TabPeekController(
             peekId = nextPeekId,
         )
         onPeekStarted()
-        startPreview(url)
         ensureOverlay()
         updateDebugInfo()
-    }
 
-    private fun startPreview(url: String) {
-        val wasPrevClosed = previousSessionClosed
-        discardPreview()
-        previousSessionClosedBeforeThisPeek = wasPrevClosed
-        previousSessionClosed = false
-        try {
-            val context = container.context
-            val activity = context.findActivity() ?: (context as? Activity)
-            val ev = engine.createView(context)
-            ev.setActivityContext(activity)
-            previewEngineView = ev
-            lastPeekReleased = false
-            updateDebugInfo()
-        } catch (e: Throwable) {
-            Log.e(TAG, "Failed to start preview for url: $url", e)
+        previewTimeoutJob?.cancel()
+        previewTimeoutJob = lifecycleOwner.lifecycleScope.launch {
+            delay(4000)
+            onPreviewTimeout()
         }
     }
 
+    private fun getOrCreatePreview(): Pair<EngineView, EngineSession> {
+        var ev = previewEngineView
+        if (ev == null) {
+            val context = container.context
+            val activity = context.findActivity() ?: (context as? Activity)
+            ev = engine.createView(context)
+            ev.setActivityContext(activity)
+            previewEngineView = ev
+            lastPeekReleased = false
+        }
+        var session = previewSession
+        if (session == null) {
+            val s = engine.createSession(private = isPrivateSession())
+            s.settings.requestInterceptor = null
+            val isDesktop = browserStore.state.selectedTab?.content?.desktopMode ?: false
+            s.toggleDesktopMode(enable = isDesktop, reload = false)
+            s.register(previewObserver)
+            previewSession = s
+            session = s
+        }
+        return Pair(ev, session)
+    }
+
     private fun bindPreviewHost(host: FrameLayout) {
-        val ev = previewEngineView ?: return
+        val (ev, session) = getOrCreatePreview()
         val view = ev.asView()
+        if (view.parent === host) {
+            return
+        }
         (view.parent as? ViewGroup)?.removeView(view)
         host.removeAllViews()
         host.addView(
@@ -487,15 +511,16 @@ class TabPeekController(
             ),
         )
 
-        fun setupSessionIfReady() {
-            if (previewSession != null) return
+        fun setupRenderIfReady() {
             if (view.isAttachedToWindow && view.width > 0 && view.height > 0) {
-                initAndRenderSession(ev, previewUrl)
+                ev.render(session)
+                setGeckoSessionFocusAndPriority(session, focused = true)
+                updateDebugInfo()
             }
         }
 
         if (view.isAttachedToWindow && view.width > 0 && view.height > 0) {
-            setupSessionIfReady()
+            setupRenderIfReady()
         } else {
             view.addOnLayoutChangeListener(object : View.OnLayoutChangeListener {
                 override fun onLayoutChange(
@@ -505,36 +530,10 @@ class TabPeekController(
                 ) {
                     if (view.isAttachedToWindow && view.width > 0 && view.height > 0) {
                         view.removeOnLayoutChangeListener(this)
-                        setupSessionIfReady()
+                        setupRenderIfReady()
                     }
                 }
             })
-        }
-    }
-
-    private fun initAndRenderSession(ev: EngineView, url: String) {
-        if (url.isBlank()) return
-        try {
-            val session = engine.createSession(private = isPrivateSession())
-            session.settings.requestInterceptor = null
-            val isDesktop = browserStore.state.selectedTab?.content?.desktopMode ?: false
-            session.toggleDesktopMode(enable = isDesktop, reload = false)
-            previewSession = session
-            session.register(previewObserver)
-
-            ev.render(session)
-            setGeckoSessionFocusAndPriority(session, focused = true)
-            session.loadUrl(url)
-
-            updateDebugInfo()
-
-            previewTimeoutJob?.cancel()
-            previewTimeoutJob = lifecycleOwner.lifecycleScope.launch {
-                delay(4000)
-                markPreviewReady()
-            }
-        } catch (e: Throwable) {
-            Log.e(TAG, "Failed to initialize preview session for url: $url", e)
         }
     }
 
@@ -547,13 +546,19 @@ class TabPeekController(
             setGeckoSessionFocusAndPriority(oldSession, focused = false)
             try {
                 oldSession.close()
-                previousSessionClosed = true
             } catch (e: Throwable) {
                 Log.w(TAG, "Error closing previewSession on recreate", e)
             }
         }
-        previewSession = null
-        initAndRenderSession(ev, url)
+        val session = engine.createSession(private = isPrivateSession())
+        session.settings.requestInterceptor = null
+        val isDesktop = browserStore.state.selectedTab?.content?.desktopMode ?: false
+        session.toggleDesktopMode(enable = isDesktop, reload = false)
+        previewSession = session
+        session.register(previewObserver)
+        ev.render(session)
+        setGeckoSessionFocusAndPriority(session, focused = true)
+        session.loadUrl(url)
     }
 
     private fun markPreviewReady() {
@@ -563,34 +568,22 @@ class TabPeekController(
         }
     }
 
+    private fun onPreviewTimeout() {
+        val current = uiState
+        if (current is TabPeekUiState.Peeking && !current.previewReady) {
+            uiState = current.copy(previewTimedOut = true)
+        }
+    }
+
     private fun discardPreview() {
         previewTimeoutJob?.cancel()
         previewTimeoutJob = null
-        val sess = previewSession
-        if (sess != null) {
-            sess.unregister(previewObserver)
-            setGeckoSessionFocusAndPriority(sess, focused = false)
-            try {
-                sess.close()
-                previousSessionClosed = true
-            } catch (e: Throwable) {
-                Log.w(TAG, "Error closing previewSession", e)
-            }
+        // Reusing session & engine view per controller lifetime:
+        // Do NOT close session or release view here!
+        previewSession?.let { session ->
+            session.loadUrl("about:blank")
+            setGeckoSessionFocusAndPriority(session, focused = false)
         }
-        val ev = previewEngineView
-        if (ev != null) {
-            try {
-                ev.asView().let { (it.parent as? ViewGroup)?.removeView(it) }
-                ev.release()
-            } catch (e: Throwable) {
-                Log.w(TAG, "Error releasing previewEngineView", e)
-            }
-        }
-        previewEngineView = null
-        previewSession = null
-        lastPeekReleased = true
-
-        // Restore focus on main tab's session
         val mainTabSession = browserStore.state.selectedTab?.engineState?.engineSession
         setGeckoSessionFocusAndPriority(mainTabSession, focused = true)
     }
