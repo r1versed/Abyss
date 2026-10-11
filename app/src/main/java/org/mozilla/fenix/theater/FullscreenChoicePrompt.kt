@@ -235,7 +235,7 @@ fun FullscreenChoicePrompt(
                 ) {
                     Checkbox(
                         checked = rememberChoice,
-                        onCheckedChange = { rememberChoice = it },
+                        onCheckedChange = null,
                         colors = CheckboxDefaults.colors(
                             checkedColor = Color(0xFFF59E0B),
                             uncheckedColor = MaterialTheme.colorScheme.onSurfaceVariant,
