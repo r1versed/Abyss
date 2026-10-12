@@ -760,6 +760,7 @@ class TabPeekController(
     }
 
     private fun detachPreview(peekId: Long) {
+        if (peekId != activePeekId) return
         dispCount++
         recordLifecycleEvent(peekId, "dispose<-composable")
         val view = activeEngineView?.asView()
