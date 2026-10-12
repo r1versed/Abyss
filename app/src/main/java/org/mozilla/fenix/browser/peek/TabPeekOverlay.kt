@@ -38,6 +38,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
@@ -76,7 +77,8 @@ import org.mozilla.fenix.theme.glass.ClarusGlassTokens
 fun TabPeekOverlay(
     state: TabPeekUiState,
     theme: Theme,
-    previewFactory: ((FrameLayout) -> Unit)? = null,
+    createPreviewView: ((FrameLayout) -> Unit)? = null,
+    releasePreviewView: ((Long) -> Unit)? = null,
     onAction: (String) -> Unit = {},
     onDismiss: () -> Unit = {},
     onCommit: () -> Unit = {},
@@ -270,32 +272,24 @@ fun TabPeekOverlay(
                         .clip(RoundedCornerShape(18.dp))
                         .background(Color.Black.copy(alpha = 0.32f)),
                 ) {
-                    if (previewFactory != null) {
+                    if (createPreviewView != null) {
                         AndroidView(
-                            factory = { ctx -> FrameLayout(ctx).also { previewFactory(it) } },
-                            update = { /* Side-effect free: do not re-add or re-attach engine view */ },
+                            factory = { ctx ->
+                                FrameLayout(ctx).also { host ->
+                                    createPreviewView(host)
+                                }
+                            },
+                            update = { /* Side-effect free: strictly empty */ },
                             modifier = Modifier.fillMaxSize(),
                         )
-                    }
 
-                    // TEMPORARY ON-SCREEN DEBUG LINE (ITEM 1b)
-                    val d = peeking.debugInfo
-                    Box(
-                        modifier = Modifier
-                            .align(Alignment.TopStart)
-                            .padding(6.dp)
-                            .background(Color.Black.copy(alpha = 0.82f), RoundedCornerShape(6.dp))
-                            .padding(horizontal = 6.dp, vertical = 4.dp),
-                    ) {
-                        Text(
-                            text = "DEBUG: peek=#${d.peekId} sess=${d.sessionId} open=${d.isOpen} act=${d.isActive} refl=${if (d.reflOk) "ok" else "FAIL"} gv_att=${d.isAttached} size=${d.viewWidth}x${d.viewHeight} prog=${d.loadProgress}% title='${d.pageTitle.take(15)}' crash=${d.crashEvent} prev_closed=${if (d.prevClosed) "yes" else "no"} main_att=${d.mainAttached} main_active=${d.mainActive}",
-                            style = androidx.compose.ui.text.TextStyle(
-                                fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
-                                fontSize = 8.5.sp,
-                                color = Color(0xFFFBBF24),
-                                lineHeight = 11.sp,
-                            ),
-                        )
+                        if (releasePreviewView != null) {
+                            DisposableEffect(peeking.peekId) {
+                                onDispose {
+                                    releasePreviewView(peeking.peekId)
+                                }
+                            }
+                        }
                     }
 
                     // Loading spinner
@@ -332,6 +326,39 @@ fun TabPeekOverlay(
                             isPrivate = isPrivate,
                             modifier = Modifier.fillMaxSize(),
                         )
+                    }
+
+                    // TEMPORARY ON-SCREEN DEBUG LINE (ITEM 3: Drawn above gesture target labels)
+                    val d = peeking.debugInfo
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.TopStart)
+                            .padding(6.dp)
+                            .background(Color.Black.copy(alpha = 0.88f), RoundedCornerShape(6.dp))
+                            .padding(horizontal = 6.dp, vertical = 4.dp),
+                    ) {
+                        Column {
+                            Text(
+                                text = "DEBUG: peek=#${d.peekId} sess=${d.sessionId} open=${d.isOpen} act_req=${d.actReq} gv_att=${d.isAttached} size=${d.viewWidth}x${d.viewHeight} vHash=${d.viewHash} dispHash=${d.displayedViewHash} hostHash=${d.hostHash} parent=${d.parentClass} winTok=${if (d.hasWindowToken) "Y" else "N"} vis=${d.visibility} prog=${d.loadProgress}% crash=${d.crashEvent} main_att=${d.mainAttached} main_open=${d.mainOpen}",
+                                style = androidx.compose.ui.text.TextStyle(
+                                    fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                                    fontSize = 7.5.sp,
+                                    color = Color(0xFFFBBF24),
+                                    lineHeight = 9.5.sp,
+                                ),
+                            )
+                            if (d.lifecycleHistory.isNotBlank()) {
+                                Text(
+                                    text = "EVENTS: ${d.lifecycleHistory}",
+                                    style = androidx.compose.ui.text.TextStyle(
+                                        fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                                        fontSize = 7.sp,
+                                        color = Color(0xFF38BDF8),
+                                        lineHeight = 9.sp,
+                                    ),
+                                )
+                            }
+                        }
                     }
                 }
 

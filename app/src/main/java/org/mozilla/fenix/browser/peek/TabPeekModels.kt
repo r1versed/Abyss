@@ -9,21 +9,34 @@ data class TabPeekContent(
     val title: String?,
 )
 
+data class PeekLifecycleEvent(
+    val timestampMs: Long,
+    val peekId: Long,
+    val event: String,
+)
+
 data class PeekDebugInfo(
     val peekId: Long = 0L,
     val sessionId: String = "",
     val isOpen: Boolean = false,
-    val isActive: Boolean = false,
+    val actReq: Boolean = false,
     val reflOk: Boolean = true,
+    val viewHash: String = "none",
+    val hostHash: String = "none",
+    val displayedViewHash: String = "none",
     val isAttached: Boolean = false,
     val viewWidth: Int = 0,
     val viewHeight: Int = 0,
+    val parentClass: String = "none",
+    val hasWindowToken: Boolean = false,
+    val visibility: String = "none",
     val loadProgress: Int = 0,
     val pageTitle: String = "",
     val crashEvent: String = "none",
     val prevClosed: Boolean = true,
     val mainAttached: Boolean = false,
-    val mainActive: Boolean = false,
+    val mainOpen: Boolean = false,
+    val lifecycleHistory: String = "",
 )
 
 data class TabPeekAction(
