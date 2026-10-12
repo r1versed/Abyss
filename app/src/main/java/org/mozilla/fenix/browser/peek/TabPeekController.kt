@@ -577,7 +577,7 @@ class TabPeekController(
         val url = resolvePeekUrl(rawHitUrl, currentTabUrl)
         previewUrl = url
 
-        createSessionAndViewForPeek(nextPeekId)
+        createSessionAndViewForPeek()
 
         val isDownloadable = isDownloadableUrl(url)
         val primaryAction = if (isDownloadable) {
@@ -609,7 +609,7 @@ class TabPeekController(
         }
     }
 
-    private fun createSessionAndViewForPeek(peekId: Long) {
+    private fun createSessionAndViewForPeek() {
         val context = container.context
         val activity = context.findActivity() ?: (context as? Activity)
         val ev = engine.createView(context)
@@ -773,7 +773,6 @@ class TabPeekController(
     private fun recreatePreviewSession() {
         val host = activeHost
         val url = previewUrl.ifBlank { return }
-        val peekId = activePeekId
 
         val oldEv = activeEngineView
         val oldSession = activeSession
@@ -788,7 +787,7 @@ class TabPeekController(
         }
 
         hasReceivedLocationForCurrentPeek = false
-        createSessionAndViewForPeek(peekId)
+        createSessionAndViewForPeek()
         if (host != null && host.isAttachedToWindow) {
             attachPreviewTo(host)
         }
