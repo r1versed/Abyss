@@ -40,6 +40,28 @@ A separate private browsing space with its own visual identity and a cool violet
 
 Install and manage compatible browser extensions directly from Clarus, including content blockers, privacy tools, and password managers.
 
+### Hold to Peek
+
+<p align="center">
+  <img src="Clarus_HoldToPeek.png" alt="Clarus Hold to Peek live link preview" width="420">
+</p>
+
+Press and hold any link and a live, full page preview opens over the page you're on. It's a real page, not a thumbnail, so you can see whether a link is worth opening before you commit to it. Drag in a direction before you let go to decide what happens next.
+
+- **Bigger preview.** The sheet fills most of the screen, and the bottom toolbar slides out of the way while you peek.
+- **Gestures, without letting go:**
+  - Swipe **up** to open the link in a new tab.
+  - Swipe **left** to open it in a private tab.
+  - Swipe **right** to **pin** it.
+  - Swipe **down** toward the action bar (**Copy**, **Share**, **New tab**) and release over the one you want.
+- **Pin it.** A pinned peek stays open after you let go. You can scroll it and interact with it like a normal page. Close it with the X, by tapping the dimmed area outside the sheet, or with Back.
+- **Steady sheet.** The preview stays still while you drag, so the action buttons are always where you aimed.
+- **No accidental taps.** Actions only fire after you've moved your finger a little, so releasing a plain long press never copies, shares or opens anything by mistake.
+- **Adapts to what you hold.** On a direct audio link, "New tab" becomes "Download".
+- **Private tabs stay private.** Peeking from a private tab uses a private session.
+
+A peek really loads the page, so the site sees the request just as it would if you had opened the link.
+
 ### Clarus Theater
 
 <p align="center">
@@ -47,6 +69,14 @@ Install and manage compatible browser extensions directly from Clarus, including
 </p>
 
 A dedicated media experience for audio and video, with fullscreen playback and controls designed around mobile use.
+
+You decide what happens when a video goes fullscreen. In Settings, **Fullscreen videos** has three options:
+
+- **Ask** shows a prompt each time. Tick "Remember my choice" and it saves your pick.
+- **Always Clarus Theater** sends every fullscreen video to Theater.
+- **Always normal fullscreen** skips Theater and uses the regular fullscreen view.
+
+The setting is the same one the prompt writes to, so you can change a remembered choice any time. If Theater can't play a particular video, Clarus quietly falls back to normal fullscreen instead of getting stuck.
 
 ### Sidus Trail
 
@@ -58,14 +88,10 @@ A visual map of your browsing journey. Each tab gets its own branch, with pages 
 
 ## What's in the box
 
-- **Hold to Peek.** Press and hold a link to get a live preview without leaving your page. Then, without letting go, use gestures:
-  - Swipe **up** to open the link in a new tab.
-  - Swipe **left** to open it in a private tab.
-  - Swipe **down** to reveal the available actions, then release over the one you want.
-  - The actions adapt to what you're holding. On a direct audio link, "New Tab" becomes "Download".
+- **Hold to Peek.** Press and hold a link for a live, scrollable preview. Swipe up for a new tab, left for a private tab, right to pin it, or down to Copy, Share or open it. Pin a peek to keep reading it while you stay on your page.
 - **Sidus Trail.** Your browsing history as a map. Each tab gets its own branch, and every page you visit becomes a node in a connected trail. You can see where you started and how you got where you are, and tap any earlier page to jump straight back to it. The trail starts as a blank canvas each new browser session.
 - **Glass tab tray.** Your tabs, but frosted and a bit nicer to look at.
-- **Clarus Theater.** A built-in player for audio and video, so media gets its own space instead of fighting the page.
+- **Clarus Theater.** A built-in player for audio and video, so media gets its own space instead of fighting the page. You choose whether fullscreen uses Theater, the normal view, or asks each time.
 - **Haptics.** Little taps where they feel right.
 - **Dragon branding.** Orange, dark, and a bit dramatic.
 - **A lighter app.** No sign-in, no sync, no VPN. Those were removed on purpose.
@@ -85,6 +111,7 @@ Here's what I actually checked, not what sounds nice:
 - Crash reporting defaults to **Never**.
 - On first launch the browser makes one request to Mozilla's Remote Settings service. That service delivers things like certificate revocation data and blocklists, so I left it on because turning it off would make the browser less safe.
 - Normal browsing traffic (the sites you visit, search, safe browsing) goes where you'd expect.
+- Hold to Peek loads the real page, so it makes the same requests opening the link would.
 
 The longer version lives in [PRIVACY.md](PRIVACY.md). If you catch Clarus doing something this section doesn't mention, please open an issue. I'd rather know.
 
@@ -92,7 +119,9 @@ The longer version lives in [PRIVACY.md](PRIVACY.md). If you catch Clarus doing 
 
 It's a beta, so here's the honest list:
 
-- Theater's fullscreen doesn't trigger on some embedded videos.
+- Theater can't play every kind of embedded video. When it can't, Clarus falls back to normal fullscreen on its own, so you may still land in the regular fullscreen view.
+- The **Hide system bars** setting only works on some screens (Settings and the home page) for now.
+- In Hold to Peek, the faint gesture labels (Private, Pin, Actions) are drawn over the page while you drag. It's cosmetic, but it can sit on top of a site's own buttons.
 - Crash reports aren't collected, so if something breaks, tell me what you were doing (a screenshot helps a lot).
 - Only the arm64 build has been tested.
 - Building from source needs Python installed. The setup script is Windows-only for now, and Linux/Mac get written instructions instead.
