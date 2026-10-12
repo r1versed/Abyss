@@ -36,6 +36,9 @@ data class PeekDebugInfo(
     val prevClosed: Boolean = true,
     val mainAttached: Boolean = false,
     val mainOpen: Boolean = false,
+    val facCount: Int = 0,
+    val dispCount: Int = 0,
+    val attCount: Int = 0,
     val lifecycleHistory: String = "",
 )
 

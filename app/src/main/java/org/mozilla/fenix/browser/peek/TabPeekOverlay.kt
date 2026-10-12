@@ -77,8 +77,8 @@ import org.mozilla.fenix.theme.glass.ClarusGlassTokens
 fun TabPeekOverlay(
     state: TabPeekUiState,
     theme: Theme,
-    createPreviewView: ((FrameLayout) -> Unit)? = null,
-    releasePreviewView: ((Long) -> Unit)? = null,
+    attachPreviewTo: ((FrameLayout) -> Unit)? = null,
+    detachPreview: ((Long) -> Unit)? = null,
     onAction: (String) -> Unit = {},
     onDismiss: () -> Unit = {},
     onCommit: () -> Unit = {},
@@ -272,21 +272,21 @@ fun TabPeekOverlay(
                         .clip(RoundedCornerShape(18.dp))
                         .background(Color.Black.copy(alpha = 0.32f)),
                 ) {
-                    if (createPreviewView != null) {
+                    if (attachPreviewTo != null) {
                         AndroidView(
                             factory = { ctx ->
                                 FrameLayout(ctx).also { host ->
-                                    createPreviewView(host)
+                                    attachPreviewTo(host)
                                 }
                             },
                             update = { /* Side-effect free: strictly empty */ },
                             modifier = Modifier.fillMaxSize(),
                         )
 
-                        if (releasePreviewView != null) {
+                        if (detachPreview != null) {
                             DisposableEffect(peeking.peekId) {
                                 onDispose {
-                                    releasePreviewView(peeking.peekId)
+                                    detachPreview(peeking.peekId)
                                 }
                             }
                         }
@@ -339,7 +339,7 @@ fun TabPeekOverlay(
                     ) {
                         Column {
                             Text(
-                                text = "DEBUG: peek=#${d.peekId} sess=${d.sessionId} open=${d.isOpen} act_req=${d.actReq} gv_att=${d.isAttached} size=${d.viewWidth}x${d.viewHeight} vHash=${d.viewHash} dispHash=${d.displayedViewHash} hostHash=${d.hostHash} parent=${d.parentClass} winTok=${if (d.hasWindowToken) "Y" else "N"} vis=${d.visibility} prog=${d.loadProgress}% crash=${d.crashEvent} main_att=${d.mainAttached} main_open=${d.mainOpen}",
+                                text = "DEBUG: peek=#${d.peekId} sess=${d.sessionId} open=${d.isOpen} act_req=${d.actReq} gv_att=${d.isAttached} size=${d.viewWidth}x${d.viewHeight} vHash=${d.viewHash} dispHash=${d.displayedViewHash} hostHash=${d.hostHash} fac=${d.facCount} disp=${d.dispCount} att=${d.attCount} parent=${d.parentClass} winTok=${if (d.hasWindowToken) "Y" else "N"} vis=${d.visibility} prog=${d.loadProgress}% crash=${d.crashEvent} main_att=${d.mainAttached} main_open=${d.mainOpen}",
                                 style = androidx.compose.ui.text.TextStyle(
                                     fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
                                     fontSize = 7.5.sp,
