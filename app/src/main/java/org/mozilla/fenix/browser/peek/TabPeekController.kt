@@ -879,6 +879,8 @@ class TabPeekController(
         passedPinThreshold = false
         passedActionsThreshold = false
         actionBounds.clear()
+        val mainTabSession = browserStore.state.selectedTab?.engineState?.engineSession
+        setGeckoSessionActive(mainTabSession, true)
         onPeekDismissed()
     }
 
