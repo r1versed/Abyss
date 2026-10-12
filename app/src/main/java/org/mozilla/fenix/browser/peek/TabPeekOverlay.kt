@@ -327,39 +327,6 @@ fun TabPeekOverlay(
                             modifier = Modifier.fillMaxSize(),
                         )
                     }
-
-                    // TEMPORARY ON-SCREEN DEBUG LINE (ITEM 3: Drawn above gesture target labels)
-                    val d = peeking.debugInfo
-                    Box(
-                        modifier = Modifier
-                            .align(Alignment.TopStart)
-                            .padding(6.dp)
-                            .background(Color.Black.copy(alpha = 0.88f), RoundedCornerShape(6.dp))
-                            .padding(horizontal = 6.dp, vertical = 4.dp),
-                    ) {
-                        Column {
-                            Text(
-                                text = "DEBUG: peek=#${d.peekId} sess=${d.sessionId} open=${d.isOpen} act_req=${d.actReq} gv_att=${d.isAttached} size=${d.viewWidth}x${d.viewHeight} vHash=${d.viewHash} dispHash=${d.displayedViewHash} hostHash=${d.hostHash} fac=${d.facCount} disp=${d.dispCount} att=${d.attCount} parent=${d.parentClass} winTok=${if (d.hasWindowToken) "Y" else "N"} vis=${d.visibility} prog=${d.loadProgress}% crash=${d.crashEvent} main_att=${d.mainAttached} main_open=${d.mainOpen}",
-                                style = androidx.compose.ui.text.TextStyle(
-                                    fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
-                                    fontSize = 7.5.sp,
-                                    color = Color(0xFFFBBF24),
-                                    lineHeight = 9.5.sp,
-                                ),
-                            )
-                            if (d.lifecycleHistory.isNotBlank()) {
-                                Text(
-                                    text = "EVENTS: ${d.lifecycleHistory}",
-                                    style = androidx.compose.ui.text.TextStyle(
-                                        fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
-                                        fontSize = 7.sp,
-                                        color = Color(0xFF38BDF8),
-                                        lineHeight = 9.sp,
-                                    ),
-                                )
-                            }
-                        }
-                    }
                 }
 
                 Spacer(Modifier.height(8.dp))
