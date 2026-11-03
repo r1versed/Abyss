@@ -1,6 +1,6 @@
 # Abyss
 
-Abyss is a personal Android browser by the Slayer team, built on Firefox's engine (GeckoView).
+Abyss is a personal Android browser by Silicon Valley, built on Firefox's engine (GeckoView).
 
 ## What's different
 
