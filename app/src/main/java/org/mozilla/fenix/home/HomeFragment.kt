@@ -4,6 +4,8 @@
 
 package org.mozilla.fenix.home
 
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.ui.input.pointer.pointerInput
 import android.content.Intent
 import android.graphics.Rect
 import android.os.Bundle
@@ -287,6 +289,25 @@ class HomeFragment : Fragment() {
     private val qrScanLauncher: ActivityResultLauncher<Intent> =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             qrScanFenixFeature?.get()?.handleToolbarQrScanResults(result.resultCode, result.data)
+        }
+    private val abyssWallpaperVersion = androidx.compose.runtime.mutableIntStateOf(0)
+    private val abyssWallpaperPicker: ActivityResultLauncher<androidx.activity.result.PickVisualMediaRequest> =
+        registerForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+            val ctx = context?.applicationContext
+            if (uri != null && ctx != null) {
+                kotlin.concurrent.thread {
+                    try {
+                        ctx.contentResolver.openInputStream(uri)?.use { input ->
+                            org.mozilla.fenix.home.ui.AbyssWallpaper.file(ctx.filesDir).outputStream().use { out ->
+                                input.copyTo(out)
+                            }
+                        }
+                        activity?.runOnUiThread { abyssWallpaperVersion.intValue++ }
+                    } catch (e: java.io.IOException) {
+                        // Could not save the image; keep the current wallpaper.
+                    }
+                }
+            }
         }
     private var voiceSearchFeature: ViewBoundFeatureWrapper<VoiceSearchFeature>? =
         ViewBoundFeatureWrapper()
@@ -722,6 +743,10 @@ class HomeFragment : Fragment() {
                             .then(homeBgModifier),
                     ) {
                         if (!isPrivateMode) {
+                            org.mozilla.fenix.home.ui.AbyssCustomWallpaper(
+                                file = org.mozilla.fenix.home.ui.AbyssWallpaper.file(requireContext().filesDir),
+                                version = abyssWallpaperVersion.intValue,
+                            )
                             WallpaperBackground(
                                 wallpaper = currentWallpaper,
                                 loadBitmap = components.useCases.wallpaperUseCases.loadBitmap::invoke,

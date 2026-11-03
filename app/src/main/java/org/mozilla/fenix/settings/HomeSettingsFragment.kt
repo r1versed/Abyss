@@ -38,6 +38,33 @@ class HomeSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFragm
 
     private val args by navArgs<HomeSettingsFragmentArgs>()
 
+    private val abyssWallpaperPicker =
+        registerForActivityResult(
+            androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia(),
+        ) { uri ->
+            val ctx = context?.applicationContext
+            if (uri != null && ctx != null) {
+                kotlin.concurrent.thread {
+                    val saved = try {
+                        ctx.contentResolver.openInputStream(uri)?.use { input ->
+                            org.mozilla.fenix.home.ui.AbyssWallpaper.file(ctx.filesDir)
+                                .outputStream().use { out -> input.copyTo(out) }
+                        }
+                        true
+                    } catch (e: java.io.IOException) {
+                        false
+                    }
+                    activity?.runOnUiThread {
+                        android.widget.Toast.makeText(
+                            ctx,
+                            if (saved) "Wallpaper saved" else "Could not save wallpaper",
+                            android.widget.Toast.LENGTH_SHORT,
+                        ).show()
+                    }
+                }
+            }
+        }
+
     @VisibleForTesting
     internal var customizeHomeMetrics: CustomizeHome = CustomizeHome
 
@@ -177,6 +204,24 @@ class HomeSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFragm
             }
         }
 
+        findPreference<Preference>("abyss_pref_custom_wallpaper_choose")?.setOnPreferenceClickListener {
+            abyssWallpaperPicker.launch(
+                androidx.activity.result.PickVisualMediaRequest(
+                    androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia.ImageOnly,
+                ),
+            )
+            true
+        }
+
+        findPreference<Preference>("abyss_pref_custom_wallpaper_reset")?.setOnPreferenceClickListener {
+            org.mozilla.fenix.home.ui.AbyssWallpaper.file(requireContext().filesDir).delete()
+            android.widget.Toast.makeText(
+                requireContext(),
+                "Custom wallpaper reset",
+                android.widget.Toast.LENGTH_SHORT,
+            ).show()
+            true
+        }
         val defaultHomepage =
             requirePreference<RadioButtonPreference>(R.string.pref_key_default_homepage)
         val customHomePage =

@@ -4,8 +4,8 @@
    - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Name of the application -->
-    <string name="app_name" translatable="false">Clarus</string>
-    <string name="firefox" translatable="false">Clarus</string>
+    <string name="app_name" translatable="false">Abyss</string>
+    <string name="firefox" translatable="false">Abyss</string>
 
     <!-- Preference for developers -->
     <string name="preference_leakcanary" translatable="false">LeakCanary</string>
@@ -228,7 +228,7 @@
     <string name="profiler_active_notification" translatable="false">Profiler active</string>
     <string name="profiler_notification_text" translatable="false">Profiling is active. Tap to stop profiler</string>
     <string name="profiler_settings_title">Profiler Settings</string>
-    <string name="profiler_filter_firefox">Clarus</string>
+    <string name="profiler_filter_firefox">Abyss</string>
     <string name="profiler_running">Profiler is currently running</string>
     <string name="profiler_filter_firefox_explain">Recommended preset for profiling Clarus</string>
     <string name="profiler_filter_graphics">Graphics</string>
@@ -412,5 +412,5 @@
     <string name="customize_toggle_weather" translatable="false">Weather</string>
 
     <!--  Firefox brand name  -->
-    <string name="app_name_firefox" tools:ignore="BrandUsage">Clarus</string>
+    <string name="app_name_firefox" tools:ignore="BrandUsage">Abyss</string>
 </resources>

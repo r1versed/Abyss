@@ -77,7 +77,7 @@ fun ClarusMinimalHomepage(
     ) {
         Box(
             modifier = Modifier
-                .size(156.dp)
+                .size(0.dp)
                 .graphicsLayer {
                     scaleX = breathScale
                     scaleY = breathScale

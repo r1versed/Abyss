@@ -45,7 +45,7 @@ android {
             arg("room.schemaLocation", "$projectDir/schemas".toString())
         }
 
-        applicationId "io.github.avgdevio.clarus"
+        applicationId "com.abyss.browser"
         minSdk config.minSdkVersion
         targetSdk config.targetSdkVersion
         versionCode 8

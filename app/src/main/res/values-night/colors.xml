@@ -103,7 +103,7 @@
     <color name="fx_mobile_icon_private">#FFF59E0B</color>
     <color name="fx_mobile_scrim">@color/novaBlackA50</color>
 
-    <color name="fx_mobile_splashscreen_background">@color/clarus_espresso</color>
+    <color name="fx_mobile_splashscreen_background">@color/clarus_obsidian</color>
 
     <!-- Design system color variables -->
 

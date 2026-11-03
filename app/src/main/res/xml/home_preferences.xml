@@ -33,6 +33,17 @@
         app:allowDividerAbove="true"
         android:key="@string/pref_key_wallpapers"
         android:title="@string/customize_wallpapers" />
+    <androidx.preference.Preference
+        android:key="abyss_pref_custom_wallpaper_choose"
+        android:title="Choose custom wallpaper"
+        android:summary="Pick an image from your gallery for the homepage"
+        app:iconSpaceReserved="false" />
+
+    <androidx.preference.Preference
+        android:key="abyss_pref_custom_wallpaper_reset"
+        android:title="Reset custom wallpaper"
+        android:summary="Go back to the default homepage background"
+        app:iconSpaceReserved="false" />
 
     <androidx.preference.SwitchPreferenceCompat
         android:key="@string/pref_key_show_top_sites"

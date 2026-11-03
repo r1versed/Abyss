@@ -136,7 +136,6 @@ class CustomizationFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFrag
         setupSystemBehaviorCategory()
         setupOtherCustomizationCategory()
         setupMediaCategory()
-        hideAppIconPreference()
     }
 
     private fun hideAppIconPreference() {

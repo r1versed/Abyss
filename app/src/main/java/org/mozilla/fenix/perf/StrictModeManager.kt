@@ -79,7 +79,7 @@ open class StrictModeManager(
             throw IllegalStateException("StrictModeManager only supported on main thread")
         }
 
-        val threadPolicy = buildThreadPolicy(withPenaltyDeath)
+        val threadPolicy = buildThreadPolicy(false)
         applyThreadPolicy(threadPolicy)
 
         val vmPolicy = buildVmPolicy()

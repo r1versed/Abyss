@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<animated-vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt">
+    <aapt:attr name="android:drawable">
+        <vector
+            android:width="432dp"
+            android:height="432dp"
+            android:viewportWidth="432"
+            android:viewportHeight="432">
+            <group
+                android:name="ring_group"
+                android:pivotX="216"
+                android:pivotY="216"
+                android:scaleX="0.6"
+                android:scaleY="0.6">
+                <path
+                    android:name="glow"
+                    android:pathData="M216,216m-100,0a100,100 0,1 1,200 0a100,100 0,1 1,-200 0"
+                    android:strokeColor="#557C6CF0"
+                    android:strokeWidth="22"
+                    android:strokeAlpha="0" />
+                <path
+                    android:name="ring"
+                    android:pathData="M216,216m-100,0a100,100 0,1 1,200 0a100,100 0,1 1,-200 0"
+                    android:strokeColor="#9B8CFF"
+                    android:strokeWidth="6"
+                    android:strokeAlpha="0" />
+            </group>
+        </vector>
+    </aapt:attr>
+    <target android:name="ring_group">
+        <aapt:attr name="android:animation">
+            <set>
+                <objectAnimator
+                    android:propertyName="scaleX"
+                    android:duration="900"
+                    android:valueFrom="0.6"
+                    android:valueTo="1"
+                    android:valueType="floatType"
+                    android:interpolator="@android:interpolator/fast_out_slow_in" />
+                <objectAnimator
+                    android:propertyName="scaleY"
+                    android:duration="900"
+                    android:valueFrom="0.6"
+                    android:valueTo="1"
+                    android:valueType="floatType"
+                    android:interpolator="@android:interpolator/fast_out_slow_in" />
+            </set>
+        </aapt:attr>
+    </target>
+    <target android:name="ring">
+        <aapt:attr name="android:animation">
+            <objectAnimator
+                android:propertyName="strokeAlpha"
+                android:duration="600"
+                android:valueFrom="0"
+                android:valueTo="1"
+                android:valueType="floatType" />
+        </aapt:attr>
+    </target>
+    <target android:name="glow">
+        <aapt:attr name="android:animation">
+            <objectAnimator
+                android:propertyName="strokeAlpha"
+                android:duration="900"
+                android:valueFrom="0"
+                android:valueTo="1"
+                android:valueType="floatType" />
+        </aapt:attr>
+    </target>
+</animated-vector>
