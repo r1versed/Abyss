@@ -183,6 +183,7 @@ class AboutFragment(
         binding.aboutText.text = aboutText
         binding.aboutContent.text = content
         binding.buildDate.text = buildDate
+        binding.wordmark.setImageResource(R.drawable.abyss_about_logo)
     }
 
     private fun populateAboutList(): List<AboutPageItem> {
@@ -192,7 +193,7 @@ class AboutFragment(
             AboutPageItem(
                 AboutItem.ExternalLink(
                     WHATS_NEW,
-                    SupportUtils.WHATS_NEW_URL,
+                    "https://github.com/r1versed/Abyss",
                 ),
                 // Note: Fenix only has release notes for 'Release' versions, NOT 'Beta' & 'Nightly'.
                 getString(R.string.about_whats_new, getString(R.string.firefox)),
@@ -200,20 +201,13 @@ class AboutFragment(
             AboutPageItem(
                 AboutItem.ExternalLink(
                     SUPPORT,
-                    SupportUtils.SUPPORT_URL,
+                    "https://github.com/r1versed/Abyss",
                 ),
                 getString(R.string.about_support),
             ),
             AboutPageItem(
                 AboutItem.Crashes,
                 getString(R.string.about_crashes),
-            ),
-            AboutPageItem(
-                AboutItem.ExternalLink(
-                    PRIVACY_NOTICE,
-                    PRIVACY_NOTICE_URL,
-                ),
-                getString(R.string.about_privacy_notice),
             ),
             AboutPageItem(
                 AboutItem.ExternalLink(LICENSING_INFO, ABOUT_LICENSE_URL),
@@ -265,7 +259,7 @@ class AboutFragment(
     companion object {
         private const val ABOUT_LICENSE_URL = "about:license"
         private const val PRIVACY_NOTICE_URL =
-            "https://github.com/AvGDeV-io/Clarus/blob/main/PRIVACY.md"
+            "https://github.com/r1versed/Abyss"
     }
 
     /**
