@@ -327,7 +327,7 @@ class DefaultTabManagerController(
             navController.popBackStack()
             navController.navigate(
                 TabManagementFragmentDirections.actionGlobalHome(
-                    focusOnAddressBar = !settings.enableHomepageTrendingRecentSearch,
+                    focusOnAddressBar = false,
                 ),
             )
         }
