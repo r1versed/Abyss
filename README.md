@@ -11,9 +11,9 @@ Abyss is a personal Android browser by Silicon Valley, built on Firefox's engine
 
 ## Credits
 
-Abyss is a modified version of Clarus (https://github.com/AvGDeV-io/Clarus), which is built on Iceraven Browser, Mozilla Firefox for Android (Fenix), GeckoView and Android Components. Thank you to everyone who worked on those.
+Abyss is built on Iceraven Browser (https://github.com/fork-maintainers/iceraven-browser), Mozilla Firefox for Android (Fenix), GeckoView and Android Components. Thank you to everyone who worked on those.
 
-Abyss is not affiliated with or endorsed by Mozilla, Clarus or Iceraven. Firefox and Mozilla are trademarks of the Mozilla Foundation.
+Abyss is not affiliated with or endorsed by Mozilla or Iceraven. Firefox and Mozilla are trademarks of the Mozilla Foundation.
 
 ## License
 
