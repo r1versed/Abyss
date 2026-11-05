@@ -431,6 +431,8 @@ abstract class BaseBrowserFragment :
     }
 
     final override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        view.findViewById<View>(R.id.abyss_toolbar_toggle)?.setOnClickListener { setAbyssToolbarHidden(!abyssToolbarHidden) }
+        view.post { setAbyssToolbarHidden(true) }
         // DO NOT ADD ANYTHING ABOVE THIS getProfilerTime CALL!
         val profilerStartTime = requireComponents.core.engine.profiler?.getProfilerTime()
 
@@ -643,7 +645,7 @@ abstract class BaseBrowserFragment :
                 slideToolbar(hide = true)
             },
             onPeekDismissed = {
-                slideToolbar(hide = false)
+                slideToolbar(hide = abyssToolbarHidden)
             },
         ).also { it.start() }
 
@@ -1570,6 +1572,14 @@ abstract class BaseBrowserFragment :
                 startActivity(android.content.Intent.createChooser(send, null))
             }
         }
+    }
+
+    private var abyssToolbarHidden = false
+
+    private fun setAbyssToolbarHidden(hidden: Boolean) {
+        abyssToolbarHidden = hidden
+        slideToolbar(hide = hidden)
+        view?.findViewById<View>(R.id.abyss_toolbar_toggle)?.animate()?.rotation(if (hidden) 0f else 180f)?.setDuration(200L)?.start()
     }
 
     private var isToolbarSuppressedByPeek = false

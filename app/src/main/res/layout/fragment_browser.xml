@@ -110,6 +110,19 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content" />
 
+            <ImageButton
+            android:id="@+id/abyss_toolbar_toggle"
+            android:layout_width="28dp"
+            android:layout_height="56dp"
+            android:layout_gravity="end|bottom"
+            android:layout_marginBottom="120dp"
+            android:background="@drawable/abyss_toggle_bg"
+            android:contentDescription="Show or hide toolbar"
+            android:elevation="16dp"
+            android:padding="2dp"
+            android:scaleType="centerInside"
+            android:src="@drawable/abyss_ic_chevron_left" />
+
         </androidx.coordinatorlayout.widget.CoordinatorLayout>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
