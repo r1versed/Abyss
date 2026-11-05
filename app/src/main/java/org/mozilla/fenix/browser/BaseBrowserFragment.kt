@@ -438,9 +438,11 @@ abstract class BaseBrowserFragment :
                 .collect { tab ->
                     val url = tab.content.url
                     val isWebsite = (url.startsWith("http://") || url.startsWith("https://")) &&
-                        tab.content.searchTerms.isEmpty()
+                        tab.content.searchTerms.isEmpty() && !isSearchResultsUrl(url)
                     if (!isWebsite) {
                         if (abyssToolbarHidden) setAbyssToolbarHidden(false)
+                    } else if (!tab.content.loading && abyssToolbarHidden) {
+                        abyssBounceToolbar()
                     } else if (!tab.content.loading && !abyssToolbarHidden) {
                         setAbyssToolbarHidden(true)
                     }
@@ -1587,7 +1589,30 @@ abstract class BaseBrowserFragment :
         }
     }
 
-    private var abyssToolbarHidden = false
+    private fun isSearchResultsUrl(url: String): Boolean {
+        val uri = android.net.Uri.parse(url)
+        val host = uri.host ?: return false
+        val path = uri.path ?: ""
+        val engines = listOf("google.", "bing.com", "duckduckgo.com", "search.yahoo.", "search.brave.com", "startpage.com", "ecosia.org", "yandex.")
+        val onEngine = engines.any { host.contains(it) }
+        return onEngine && (path.startsWith("/search") || path.startsWith("/html") || uri.getQueryParameter("q") != null)
+    }
+
+    
+private var abyssBouncing = false
+
+    private fun abyssBounceToolbar() {
+        if (abyssBouncing) return
+        abyssBouncing = true
+        setAbyssToolbarHidden(false)
+        view?.postDelayed({
+            setAbyssToolbarHidden(true)
+            abyssBouncing = false
+        }, 350L)
+    }
+
+    
+private var abyssToolbarHidden = false
 
     private fun setAbyssToolbarHidden(hidden: Boolean) {
         abyssToolbarHidden = hidden
