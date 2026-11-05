@@ -432,7 +432,20 @@ abstract class BaseBrowserFragment :
 
     final override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         view.findViewById<View>(R.id.abyss_toolbar_toggle)?.setOnClickListener { setAbyssToolbarHidden(!abyssToolbarHidden) }
-        view.post { setAbyssToolbarHidden(true) }
+        requireComponents.core.store.flowScoped(viewLifecycleOwner, Dispatchers.Main) { flow ->
+            flow.mapNotNull { state -> state.findTabOrCustomTabOrSelectedTab(customTabSessionId) }
+                .distinctUntilChangedBy { tab -> Triple(tab.id, tab.content.url, tab.content.loading) }
+                .collect { tab ->
+                    val url = tab.content.url
+                    val isWebsite = (url.startsWith("http://") || url.startsWith("https://")) &&
+                        tab.content.searchTerms.isEmpty()
+                    if (!isWebsite) {
+                        if (abyssToolbarHidden) setAbyssToolbarHidden(false)
+                    } else if (!tab.content.loading && !abyssToolbarHidden) {
+                        setAbyssToolbarHidden(true)
+                    }
+                }
+        }
         // DO NOT ADD ANYTHING ABOVE THIS getProfilerTime CALL!
         val profilerStartTime = requireComponents.core.engine.profiler?.getProfilerTime()
 
