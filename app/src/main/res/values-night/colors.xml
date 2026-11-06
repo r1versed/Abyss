@@ -9,8 +9,8 @@
     <color name="clarus_soft_sand">#EAE1D4</color>
     <color name="clarus_espresso">#0C0B0E</color>
     <color name="clarus_warm_charcoal">#16141B</color>
-    <color name="clarus_copper">#B8754B</color>
-    <color name="clarus_saffron">#D5A24A</color>
+    <color name="clarus_copper">#19E6FF</color>
+    <color name="clarus_saffron">#4DA3FF</color>
     <color name="clarus_dusty_lavender">#AAA0D2</color>
     <color name="clarus_muted_coral">#C9786A</color>
     <color name="clarus_deep_indigo">#36335F</color>
@@ -22,17 +22,17 @@
     <color name="clarus_glass_surface_fallback">#BF1C1C22</color>
     <color name="clarus_glass_dialog_plate">#BF1C1C22</color>
     <color name="clarus_glass_border_resting">#38FFFFFF</color>
-    <color name="clarus_glass_border_active">#F2B8754B</color>
+    <color name="clarus_glass_border_active">#F219E6FF</color>
 
     <!-- Clarus Glass Toggle Colors (Dark Mode) -->
     <color name="clarus_switch_track_unchecked_fill">#22FFFFFF</color>
     <color name="clarus_switch_track_unchecked_stroke">#38FFFFFF</color>
-    <color name="clarus_switch_track_checked_fill">#E0B8754B</color>
-    <color name="clarus_switch_track_checked_stroke">#F59E0B</color>
+    <color name="clarus_switch_track_checked_fill">#A019E6FF</color>
+    <color name="clarus_switch_track_checked_stroke">#19E6FF</color>
     <color name="clarus_switch_thumb_unchecked_fill">#E8E5DF</color>
     <color name="clarus_switch_thumb_unchecked_stroke">#30FFFFFF</color>
     <color name="clarus_switch_thumb_checked_fill">#FCFAF6</color>
-    <color name="clarus_switch_thumb_checked_stroke">#F59E0B</color>
+    <color name="clarus_switch_thumb_checked_stroke">#19E6FF</color>
 
     <!-- Clarus Dark Semantic Palette -->
     <color name="clarus_primary">@color/clarus_copper</color>

@@ -265,7 +265,7 @@ private fun AIChoiceBanner(onLearnMoreClick: () -> Unit) {
         ),
         illustration = {
             Image(
-                painter = painterResource(R.drawable.fox_ai_on_state),
+                painter = painterResource(R.drawable.abyss_about_logo),
                 contentDescription = null,
                 modifier = Modifier
                     .width(62.dp)

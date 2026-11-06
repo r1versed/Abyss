@@ -29,6 +29,13 @@ class VerticalSwipeRefreshLayout @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
 ) : SwipeRefreshLayout(context, attrs) {
+    init {
+        val circleView = getChildAt(0) as? android.widget.ImageView
+        if (circleView != null) {
+            circleView.setImageDrawable(AbyssPullDrawable(this, circleView))
+        }
+    }
+
     @VisibleForTesting
     internal var isQuickScaleInProgress = false
 
