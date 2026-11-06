@@ -36,6 +36,7 @@ enum class AppIcon(
 ) {
     AppDefault(
         aliasSuffix = "App",
+        iconForegroundId = R.drawable.abyss_about_logo,
         iconBackground = IconBackground.Color(colorResId = R.color.ic_launcher_background),
         titleId = R.string.alternative_app_icon_option_default,
     ),
