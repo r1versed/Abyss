@@ -275,7 +275,7 @@ internal fun FloatingToolbarFAB(
                 onOpenNewNormalTabClicked()
             }
             colors = FloatingActionButtonDefaults.colorsPrimary(
-                containerColor = Color(0xFFF59E0B),
+                containerColor = Color(0xFF19E6FF),
                 contentColor = Color(0xFF16141D),
             )
         }
@@ -288,7 +288,7 @@ internal fun FloatingToolbarFAB(
                 onOpenNewPrivateTabClicked()
             }
             colors = FloatingActionButtonDefaults.colorsPrimary(
-                containerColor = Color(0xFFF59E0B),
+                containerColor = Color(0xFF19E6FF),
                 contentColor = Color(0xFF16141D),
             )
         }
@@ -327,7 +327,7 @@ internal fun FloatingToolbarFAB(
             contentDescription = stringResource(id = R.string.add_tab)
             onClick = onOpenNewNormalTabClicked
             colors = FloatingActionButtonDefaults.colorsPrimary(
-                containerColor = Color(0xFFB8754B),
+                containerColor = Color(0xFF00B8D9),
                 contentColor = Color(0xFFFCFAF6),
             )
         }

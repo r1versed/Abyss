@@ -319,8 +319,8 @@ private fun TabPageBanner(
                             topEndPercent = 50,
                         ),
                         color = when (liveSelectedPage) {
-                            Page.PrivateTabs -> Color(0xFFF59E0B)
-                            Page.Sidus -> Color(0xFFB8754B)
+                            Page.PrivateTabs -> Color(0xFF19E6FF)
+                            Page.Sidus -> Color(0xFF00B8D9)
                             else -> MaterialTheme.colorScheme.onSurface
                         },
                     )
@@ -437,7 +437,7 @@ private fun TabPageBannerTabs(
         Icon(
             painter = painterResource(R.drawable.ic_sidus_constellation),
             contentDescription = null,
-            tint = if (selectedPage == Page.Sidus) Color(0xFFB8754B) else LocalContentColor.current,
+            tint = if (selectedPage == Page.Sidus) Color(0xFF00B8D9) else LocalContentColor.current,
         )
     }
 }

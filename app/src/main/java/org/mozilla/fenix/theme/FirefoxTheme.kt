@@ -72,16 +72,16 @@ fun FirefoxTheme(
 
     val colorScheme: ColorScheme = when (theme) {
         Theme.Light -> acornLightColorScheme().copy(
-            primary = Color(0xFFB8754B),
-            tertiary = Color(0xFFB8754B),
-            tertiaryContainer = Color(0x33B8754B),
+            primary = Color(0xFF00B8D9),
+            tertiary = Color(0xFF00B8D9),
+            tertiaryContainer = Color(0x3300B8D9),
             onTertiary = Color(0xFFFCFAF6),
-            onTertiaryContainer = Color(0xFFB8754B),
+            onTertiaryContainer = Color(0xFF00B8D9),
         )
         Theme.Dark -> acornDarkColorScheme().copy(
-            primary = Color(0xFFB8754B),
-            tertiary = Color(0xFFD5A24A),
-            tertiaryContainer = Color(0x40B8754B),
+            primary = Color(0xFF00B8D9),
+            tertiary = Color(0xFF2F8CFF),
+            tertiaryContainer = Color(0x4000B8D9),
             onTertiary = Color(0xFF24201F),
             onTertiaryContainer = Color(0xFFFCFAF6),
             background = Color(0xFF0C0B0E),
@@ -89,9 +89,9 @@ fun FirefoxTheme(
             surfaceVariant = Color(0xFF16141B),
         )
         Theme.Private -> acornPrivateColorScheme().copy(
-            primary = Color(0xFFB8754B),
-            tertiary = Color(0xFFD5A24A),
-            tertiaryContainer = Color(0x40B8754B),
+            primary = Color(0xFF00B8D9),
+            tertiary = Color(0xFF2F8CFF),
+            tertiaryContainer = Color(0x4000B8D9),
             onTertiary = Color(0xFF24201F),
             onTertiaryContainer = Color(0xFFFCFAF6),
         )

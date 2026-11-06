@@ -712,7 +712,7 @@ fun ClarusTheaterScreen(
             ) {
                 CircularProgressIndicator(
                     modifier = Modifier.size(52.dp),
-                    color = Color(0xFFD5A24A), // Muted Saffron / Amber glow
+                    color = Color(0xFF2F8CFF), // Muted Saffron / Amber glow
                     strokeWidth = 3.dp,
                 )
             }
@@ -750,7 +750,7 @@ fun ClarusTheaterScreen(
                 iconTint = Color(0xFFE08A44), // Warm Amber
                 value = brightness,
                 fillBrush = Brush.verticalGradient(
-                    colors = listOf(Color(0xFFE08A44), Color(0xFFB8754B)),
+                    colors = listOf(Color(0xFFE08A44), Color(0xFF00B8D9)),
                 ),
                 label = "${(brightness * 100).toInt()}%",
             )
@@ -1154,13 +1154,13 @@ private fun CenterScrubHud(
         modifier = modifier
             .clip(RoundedCornerShape(20.dp))
             .background(Color(0xD90F172A))
-            .border(1.dp, Color(0x33D5A24A), RoundedCornerShape(20.dp))
+            .border(1.dp, Color(0x332F8CFF), RoundedCornerShape(20.dp))
             .padding(horizontal = 24.dp, vertical = 14.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(
             text = "[$sign s]",
-            color = Color(0xFFD5A24A),
+            color = Color(0xFF2F8CFF),
             fontSize = 13.sp,
             fontWeight = FontWeight.Bold,
             fontFamily = FontFamily.Monospace,
@@ -1358,7 +1358,7 @@ private fun InteractiveScrubberTrack(
                 .clip(RoundedCornerShape(2.dp))
                 .background(
                     Brush.horizontalGradient(
-                        colors = listOf(Color(0xFFE08A44), Color(0xFFD5A24A), Color(0xFFAAA0D2)),
+                        colors = listOf(Color(0xFFE08A44), Color(0xFF2F8CFF), Color(0xFFAAA0D2)),
                     ),
                 ),
         )
@@ -1374,7 +1374,7 @@ private fun InteractiveScrubberTrack(
                 .size(14.dp)
                 .clip(CircleShape)
                 .background(Color.White)
-                .border(1.5.dp, Color(0xFFD5A24A), CircleShape),
+                .border(1.5.dp, Color(0xFF2F8CFF), CircleShape),
         )
     }
 }
@@ -1474,7 +1474,7 @@ private fun ClarusPortraitAudioScreen(
                 brush = Brush.radialGradient(
                     colors = listOf(
                         Color(0x55E08A44).copy(alpha = activeAlpha * 0.9f),
-                        Color(0x26B8754B).copy(alpha = activeAlpha * 0.5f),
+                        Color(0x2600B8D9).copy(alpha = activeAlpha * 0.5f),
                         Color.Transparent,
                     ),
                     center = centerOffset,
@@ -1489,7 +1489,7 @@ private fun ClarusPortraitAudioScreen(
                 val rippleRadius = baseRadius * (0.35f + i * 0.22f)
                 val rippleAlpha = (activeAlpha * (1f - i * 0.25f)).coerceIn(0f, 1f)
                 drawCircle(
-                    color = Color(0xFFD5A24A).copy(alpha = rippleAlpha * 0.25f),
+                    color = Color(0xFF2F8CFF).copy(alpha = rippleAlpha * 0.25f),
                     radius = rippleRadius,
                     center = centerOffset,
                     style = Stroke(width = 1.5f),
@@ -1541,7 +1541,7 @@ private fun ClarusPortraitAudioScreen(
                         modifier = Modifier
                             .size(6.dp)
                             .clip(CircleShape)
-                            .background(Color(0xFFD5A24A)),
+                            .background(Color(0xFF2F8CFF)),
                     )
                     Text(
                         text = "CLARUS THEATER",
@@ -1583,7 +1583,7 @@ private fun ClarusPortraitAudioScreen(
                             listOf(
                                 Color.White.copy(alpha = 0.28f),
                                 Color.White.copy(alpha = 0.08f),
-                                Color(0x22B8754B),
+                                Color(0x2200B8D9),
                             ),
                         ),
                         RoundedCornerShape(36.dp),
@@ -1596,7 +1596,7 @@ private fun ClarusPortraitAudioScreen(
                         .size(170.dp)
                         .clip(CircleShape)
                         .background(Color(0x550F172A))
-                        .border(1.dp, Color(0x26D5A24A), CircleShape),
+                        .border(1.dp, Color(0x262F8CFF), CircleShape),
                     contentAlignment = Alignment.Center,
                 ) {
                     // Harmonic soundwave bars
@@ -1619,7 +1619,7 @@ private fun ClarusPortraitAudioScreen(
                                     .clip(RoundedCornerShape(3.dp))
                                     .background(
                                         Brush.verticalGradient(
-                                            listOf(Color(0xFFE08A44), Color(0xFFD5A24A), Color(0xFFAAA0D2)),
+                                            listOf(Color(0xFFE08A44), Color(0xFF2F8CFF), Color(0xFFAAA0D2)),
                                         ),
                                     ),
                             )
@@ -1654,7 +1654,7 @@ private fun ClarusPortraitAudioScreen(
                     modifier = Modifier
                         .size(5.dp)
                         .clip(CircleShape)
-                        .background(Color(0xFFD5A24A)),
+                        .background(Color(0xFF2F8CFF)),
                 )
                 Text(
                     text = if (badges.isNotEmpty()) badges.joinToString(" · ") else "Lossless Audio Stream",
@@ -1768,7 +1768,7 @@ private fun ClarusPortraitAudioScreen(
             ) {
                 CircularProgressIndicator(
                     modifier = Modifier.size(52.dp),
-                    color = Color(0xFFD5A24A),
+                    color = Color(0xFF2F8CFF),
                     strokeWidth = 3.dp,
                 )
             }
@@ -1825,7 +1825,7 @@ private fun ClarusAudioPipScreen(
             drawCircle(
                 brush = Brush.radialGradient(
                     colors = listOf(
-                        Color(0x33D5A24A),
+                        Color(0x332F8CFF),
                         Color(0x184C1D95),
                         Color.Transparent,
                     ),
@@ -1870,7 +1870,7 @@ private fun ClarusAudioPipScreen(
                                 .clip(RoundedCornerShape(1.5.dp))
                                 .background(
                                     Brush.verticalGradient(
-                                        listOf(Color(0xFFE08A44), Color(0xFFD5A24A), Color(0xFFAAA0D2)),
+                                        listOf(Color(0xFFE08A44), Color(0xFF2F8CFF), Color(0xFFAAA0D2)),
                                     ),
                                 ),
                         )
@@ -1931,7 +1931,7 @@ private fun ClarusAudioPipScreen(
                             .fillMaxHeight()
                             .background(
                                 Brush.horizontalGradient(
-                                    listOf(Color(0xFFD5A24A), Color(0xFFF59E0B)),
+                                    listOf(Color(0xFF2F8CFF), Color(0xFF19E6FF)),
                                 ),
                             ),
                     )
@@ -2054,7 +2054,7 @@ private fun TheaterErrorOverlay(
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(12.dp))
-                        .background(Color(0xFFD5A24A))
+                        .background(Color(0xFF2F8CFF))
                         .clickable(onClick = onRetry)
                         .padding(horizontal = 22.dp, vertical = 10.dp),
                     contentAlignment = Alignment.Center,

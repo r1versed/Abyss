@@ -234,12 +234,12 @@ private fun DownloadProgressIndicator(
     @FloatRange(from = 0.0, to = 1.0) progress: Float?,
 ) {
     val isDark = isSystemInDarkTheme()
-    val trackColor = if (isDark) Color(0x33F59E0B) else Color(0x1F24201F)
+    val trackColor = if (isDark) Color(0x3319E6FF) else Color(0x1F24201F)
     val progressBrush = Brush.horizontalGradient(
         colors = if (isDark) {
-            listOf(Color(0xFFF59E0B), Color(0xFFFBBF24), Color(0xFFD97706))
+            listOf(Color(0xFF19E6FF), Color(0xFF4DA3FF), Color(0xFF0099CC))
         } else {
-            listOf(Color(0xFFD5A24A), Color(0xFFB8754B), Color(0xFFF59E0B))
+            listOf(Color(0xFF2F8CFF), Color(0xFF00B8D9), Color(0xFF19E6FF))
         },
     )
 

@@ -47,7 +47,7 @@ import androidx.compose.ui.unit.sp
 import org.mozilla.fenix.theme.glass.ClarusGlassSurface
 import org.mozilla.fenix.theme.glass.ClarusGlassTokens
 
-private val AccentCopper = Color(0xFFB8754B)
+private val AccentCopper = Color(0xFF00B8D9)
 private val DustLavender = Color(0xFFAAA0D2)
 private val Obsidian = Color(0xFF131319)
 

@@ -101,14 +101,14 @@ object ClarusGlassTokens {
         val DarkTextSecondary: Color = Color(0xFF94A3B8)
 
         // Restrained Accents
-        val AccentCopper: Color = Color(0xFFB8754B) // Soft Copper: Active tabs & key focus
+        val AccentCopper: Color = Color(0xFF00B8D9) // Soft Copper: Active tabs & key focus
         val AccentLavender: Color = Color(0xFFAAA0D2) // Dusty Lavender: Spatial ambient highlight
-        val AccentSaffron: Color = Color(0xFFD5A24A) // Muted Saffron: Bookmarks / Reading mode
+        val AccentSaffron: Color = Color(0xFF2F8CFF) // Muted Saffron: Bookmarks / Reading mode
         val AccentCoral: Color = Color(0xFFC9786A) // Muted Coral: Critical alerts
 
         // Private Sanctuary Accents
-        val PrivateAmber: Color = Color(0xFFF59E0B) // Radiant Amber: Ephemeral private indicator
-        val PrivateViolet: Color = Color(0xFFB8754B) // Soft Copper: private browsing rim (was Velvet Violet)
+        val PrivateAmber: Color = Color(0xFF19E6FF) // Radiant Amber: Ephemeral private indicator
+        val PrivateViolet: Color = Color(0xFF00B8D9) // Soft Copper: private browsing rim (was Velvet Violet)
     }
 
     /**
@@ -156,7 +156,7 @@ object ClarusGlassTokens {
         )
 
         /**
-         * Active / focused rim highlight brush featuring Soft Copper (#B8754B).
+         * Active / focused rim highlight brush featuring Soft Copper (#00B8D9).
          */
         fun activeBorderBrush(isDark: Boolean = false): Brush {
             val topAlpha = if (isDark) 0.95f else 0.85f
@@ -170,7 +170,7 @@ object ClarusGlassTokens {
         }
 
         /**
-         * Private browsing active highlight brush featuring Radiant Amber (#F59E0B).
+         * Private browsing active highlight brush featuring Radiant Amber (#19E6FF).
          */
         fun activePrivateBorderBrush(): Brush = Brush.verticalGradient(
             colors = listOf(

@@ -52,7 +52,7 @@ import org.mozilla.fenix.theme.glass.ClarusGlassTokens
 
 private val Obsidian = Color(0xFF131319)
 private val DustLavender = Color(0xFFAAA0D2)
-private val AccentCopper = Color(0xFFB8754B)
+private val AccentCopper = Color(0xFF00B8D9)
 
 /**
  * Top-level composable for the Sidus trail view.

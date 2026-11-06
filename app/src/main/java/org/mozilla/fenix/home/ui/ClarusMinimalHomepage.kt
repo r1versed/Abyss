@@ -96,7 +96,7 @@ fun ClarusMinimalHomepage(
                 val haloColor = if (isPrivateMode) {
                     Color(0xFFAAA0D2).copy(alpha = 0.22f * glowAlpha)
                 } else {
-                    Color(0xFFF59E0B).copy(alpha = 0.25f * glowAlpha)
+                    Color(0xFF19E6FF).copy(alpha = 0.25f * glowAlpha)
                 }
                 drawCircle(
                     brush = Brush.radialGradient(
@@ -130,23 +130,23 @@ private fun ClarusEmblemCanvas(
     // Dynamic theme colors
     val outerColors = remember(isDark, isPrivate) {
         when {
-            isPrivate -> listOf(Color(0xFFFBBF24), Color(0xFFF59E0B), Color(0xFFB45309))
-            isDark -> listOf(Color(0xFFF59E0B), Color(0xFFE07A5F), Color(0xFFD97706))
-            else -> listOf(Color(0xFFD5A24A), Color(0xFFB8754B), Color(0xFFC9786A))
+            isPrivate -> listOf(Color(0xFF4DA3FF), Color(0xFF19E6FF), Color(0xFF0077AA))
+            isDark -> listOf(Color(0xFF19E6FF), Color(0xFFE07A5F), Color(0xFF0099CC))
+            else -> listOf(Color(0xFF2F8CFF), Color(0xFF00B8D9), Color(0xFFC9786A))
         }
     }
 
     val innerColors = remember(isDark, isPrivate) {
         when {
-            isPrivate -> listOf(Color(0xFFFEF3C7), Color(0xFFFBBF24), Color(0xFFD97706))
-            isDark -> listOf(Color(0xFFFBBF24), Color(0xFFF59E0B), Color(0xFFB45309))
+            isPrivate -> listOf(Color(0xFFB3F5FF), Color(0xFF4DA3FF), Color(0xFF0099CC))
+            isDark -> listOf(Color(0xFF4DA3FF), Color(0xFF19E6FF), Color(0xFF0077AA))
             else -> listOf(Color(0xFFE6AAA0D2), Color(0xFFB37B73A8), Color(0xFF8036335F))
         }
     }
 
     val focalPointColor = remember(isDark, isPrivate) {
         when {
-            isPrivate -> Color(0xFFFEF3C7)
+            isPrivate -> Color(0xFFB3F5FF)
             isDark -> Color(0xFFF7F3EC)
             else -> Color(0xFF2E2825)
         }
@@ -154,15 +154,15 @@ private fun ClarusEmblemCanvas(
 
     val haloCopperColor = remember(isDark, isPrivate) {
         when {
-            isPrivate -> Color(0xFFF59E0B).copy(alpha = 0.28f * glowMultiplier)
-            isDark -> Color(0xFFB8754B).copy(alpha = 0.20f * glowMultiplier)
-            else -> Color(0xFFB8754B).copy(alpha = 0.14f * glowMultiplier)
+            isPrivate -> Color(0xFF19E6FF).copy(alpha = 0.28f * glowMultiplier)
+            isDark -> Color(0xFF00B8D9).copy(alpha = 0.20f * glowMultiplier)
+            else -> Color(0xFF00B8D9).copy(alpha = 0.14f * glowMultiplier)
         }
     }
 
     val haloVioletColor = remember(isDark, isPrivate) {
         when {
-            isPrivate -> Color(0xFFF59E0B).copy(alpha = 0.22f * glowMultiplier)
+            isPrivate -> Color(0xFF19E6FF).copy(alpha = 0.22f * glowMultiplier)
             isDark -> Color(0xFFAAA0D2).copy(alpha = 0.18f * glowMultiplier)
             else -> Color(0xFFAAA0D2).copy(alpha = 0.12f * glowMultiplier)
         }

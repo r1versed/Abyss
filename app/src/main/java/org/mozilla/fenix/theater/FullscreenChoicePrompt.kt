@@ -113,8 +113,8 @@ fun FullscreenChoicePrompt(
                             .background(
                                 Brush.linearGradient(
                                     listOf(
-                                        Color(0xFFF59E0B).copy(alpha = 0.25f),
-                                        Color(0xFFD97706).copy(alpha = 0.15f),
+                                        Color(0xFF19E6FF).copy(alpha = 0.25f),
+                                        Color(0xFF0099CC).copy(alpha = 0.15f),
                                     ),
                                 ),
                             ),
@@ -123,7 +123,7 @@ fun FullscreenChoicePrompt(
                         Icon(
                             painter = painterResource(R.drawable.ic_theater_fullscreen),
                             contentDescription = null,
-                            tint = Color(0xFFF59E0B),
+                            tint = Color(0xFF19E6FF),
                             modifier = Modifier.size(20.dp),
                         )
                     }
@@ -174,8 +174,8 @@ fun FullscreenChoicePrompt(
                                 .background(
                                     Brush.verticalGradient(
                                         listOf(
-                                            Color(0xFFF59E0B).copy(alpha = 0.95f),
-                                            Color(0xFFD97706).copy(alpha = 0.90f),
+                                            Color(0xFF19E6FF).copy(alpha = 0.95f),
+                                            Color(0xFF0099CC).copy(alpha = 0.90f),
                                         ),
                                     ),
                                 ),
@@ -237,7 +237,7 @@ fun FullscreenChoicePrompt(
                         checked = rememberChoice,
                         onCheckedChange = null,
                         colors = CheckboxDefaults.colors(
-                            checkedColor = Color(0xFFF59E0B),
+                            checkedColor = Color(0xFF19E6FF),
                             uncheckedColor = MaterialTheme.colorScheme.onSurfaceVariant,
                             checkmarkColor = Color(0xFF1C1410),
                         ),

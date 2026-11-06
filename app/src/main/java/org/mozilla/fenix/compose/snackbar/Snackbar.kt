@@ -303,16 +303,16 @@ fun ClarusSnackbar(
     }
 
     val outlineColor = if (isPrivate) {
-        Color(0x55F59E0B) // Glowing amber border in obsidian mode
+        Color(0x5519E6FF) // Glowing amber border in obsidian mode
     } else if (isDark) {
         Color(0x28FFFFFF)
     } else {
         Color(0x1F24201F)
     }
 
-    val textPrimary = if (isPrivate) Color(0xFFFEF3C7) else if (isDark) Color(0xFFF7F3EC) else Color(0xFF24201F)
+    val textPrimary = if (isPrivate) Color(0xFFB3F5FF) else if (isDark) Color(0xFFF7F3EC) else Color(0xFF24201F)
     val textSecondary = if (isPrivate) Color(0xFFD4AF37) else if (isDark) Color(0xFFAAA0D2) else Color(0xFF756F6B)
-    val actionTextColor = if (isPrivate) Color(0xFFF59E0B) else if (isDark) Color(0xFFFBBF24) else Color(0xFFB8754B)
+    val actionTextColor = if (isPrivate) Color(0xFF19E6FF) else if (isDark) Color(0xFF4DA3FF) else Color(0xFF00B8D9)
 
     Box(
         modifier = modifier

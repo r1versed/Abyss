@@ -163,12 +163,12 @@ class BrowserToolbarComposable(
             val isLoading = isTabLoading || (progress in 1..99)
 
             val clarusOnSurface = when {
-                isPrivate -> Color(0xFFFEF3C7)
+                isPrivate -> Color(0xFFB3F5FF)
                 isDarkTheme -> ClarusGlassTokens.Colors.DarkTextPrimary
                 else -> ClarusGlassTokens.Colors.InkEspresso
             }
             val clarusOnSurfaceVariant = when {
-                isPrivate -> Color(0xFFF59E0B)
+                isPrivate -> Color(0xFF19E6FF)
                 isDarkTheme -> ClarusGlassTokens.Colors.DarkTextSecondary
                 else -> ClarusGlassTokens.Colors.InkMuted
             }
@@ -190,8 +190,8 @@ class BrowserToolbarComposable(
                     onSurfaceVariant =
                         customColors.value?.secondaryReadableColor?.let { Color(it) }
                             ?: clarusOnSurfaceVariant,
-                    outline = if (isPrivate) Color(0x40F59E0B) else if (isDarkTheme) Color(0xFF302B2A) else Color(0xFFEAE1D4),
-                    outlineVariant = if (isPrivate) Color(0xFFF59E0B) else if (isDarkTheme) Color(0xFF36335F) else Color(0xFF9CA8B7),
+                    outline = if (isPrivate) Color(0x4019E6FF) else if (isDarkTheme) Color(0xFF302B2A) else Color(0xFFEAE1D4),
+                    outlineVariant = if (isPrivate) Color(0xFF19E6FF) else if (isDarkTheme) Color(0xFF36335F) else Color(0xFF9CA8B7),
                 )
             }
 
@@ -491,13 +491,13 @@ private fun ClarusToolbarContainer(
     // Obsidian Sanctuary chromatic palette for private browsing (warm Clarus accents only)
     val privateRgbColors = remember {
         listOf(
-            Color(0xFFF59E0B), // Radiant Amber
-            Color(0xFFFBBF24), // Warm Honey Gold
-            Color(0xFFB8754B), // Soft Copper
-            Color(0xFFD97706), // Burnt Amber
+            Color(0xFF19E6FF), // Radiant Amber
+            Color(0xFF4DA3FF), // Warm Honey Gold
+            Color(0xFF00B8D9), // Soft Copper
+            Color(0xFF0099CC), // Burnt Amber
             Color(0xFFE07A5F), // Muted Coral
-            Color(0xFFF59E0B), // Radiant Amber
-            Color(0xFFF59E0B), // Loop closure
+            Color(0xFF19E6FF), // Radiant Amber
+            Color(0xFF19E6FF), // Loop closure
         )
     }
 

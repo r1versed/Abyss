@@ -148,7 +148,7 @@ fun TabPeekOverlay(
                             .size(36.dp)
                             .clip(CircleShape)
                             .background(
-                                if (isPrivate) Color(0xFFF59E0B).copy(alpha = 0.25f)
+                                if (isPrivate) Color(0xFF19E6FF).copy(alpha = 0.25f)
                                 else Color.White.copy(alpha = 0.12f),
                             ),
                         contentAlignment = Alignment.Center,
@@ -159,7 +159,7 @@ fun TabPeekOverlay(
                                 else iconsR.drawable.mozac_ic_lock_24,
                             ),
                             contentDescription = null,
-                            tint = if (isPrivate) Color(0xFFF59E0B) else MaterialTheme.colorScheme.onSurface,
+                            tint = if (isPrivate) Color(0xFF19E6FF) else MaterialTheme.colorScheme.onSurface,
                             modifier = Modifier.size(18.dp),
                         )
                     }
@@ -202,7 +202,7 @@ fun TabPeekOverlay(
                             .wrapContentWidth()
                             .clip(RoundedCornerShape(8.dp))
                             .background(
-                                if (peeking.isPinned) Color(0xFFF59E0B).copy(alpha = 0.22f)
+                                if (peeking.isPinned) Color(0xFF19E6FF).copy(alpha = 0.22f)
                                 else Color.White.copy(alpha = 0.08f),
                             )
                             .padding(horizontal = 8.dp, vertical = 4.dp),
@@ -216,7 +216,7 @@ fun TabPeekOverlay(
                                 Icon(
                                     painter = painterResource(iconsR.drawable.mozac_ic_pin_24),
                                     contentDescription = null,
-                                    tint = Color(0xFFF59E0B),
+                                    tint = Color(0xFF19E6FF),
                                     modifier = Modifier.size(11.dp),
                                 )
                                 Text(
@@ -225,7 +225,7 @@ fun TabPeekOverlay(
                                         fontSize = 10.sp,
                                         fontWeight = FontWeight.Bold,
                                     ),
-                                    color = Color(0xFFF59E0B),
+                                    color = Color(0xFF19E6FF),
                                     softWrap = false,
                                     maxLines = 1,
                                 )
@@ -237,7 +237,7 @@ fun TabPeekOverlay(
                                     fontSize = 10.sp,
                                     fontWeight = FontWeight.Medium,
                                 ),
-                                color = Color(0xFFF59E0B),
+                                color = Color(0xFF19E6FF),
                                 softWrap = false,
                                 maxLines = 1,
                             )
@@ -304,7 +304,7 @@ fun TabPeekOverlay(
                             ) {
                                 CircularProgressIndicator(
                                     modifier = Modifier.size(20.dp),
-                                    color = Color(0xFFF59E0B),
+                                    color = Color(0xFF19E6FF),
                                     strokeWidth = 2.5.dp,
                                 )
                                 Text(
@@ -441,8 +441,8 @@ private fun GestureIndicator(
                 if (isActive) {
                     Brush.verticalGradient(
                         listOf(
-                            Color(0xFFF59E0B).copy(alpha = (0.35f + progress * 0.55f).coerceIn(0.35f, 0.95f)),
-                            Color(0xFFD97706).copy(alpha = (0.25f + progress * 0.55f).coerceIn(0.25f, 0.90f)),
+                            Color(0xFF19E6FF).copy(alpha = (0.35f + progress * 0.55f).coerceIn(0.35f, 0.95f)),
+                            Color(0xFF0099CC).copy(alpha = (0.25f + progress * 0.55f).coerceIn(0.25f, 0.90f)),
                         ),
                     )
                 } else {
@@ -464,7 +464,7 @@ private fun GestureIndicator(
             Icon(
                 painter = painterResource(iconRes),
                 contentDescription = null,
-                tint = if (isActive) Color(0xFF1C1410).takeIf { progress >= 0.9f } ?: Color(0xFFF59E0B) else Color.White.copy(alpha = alpha),
+                tint = if (isActive) Color(0xFF1C1410).takeIf { progress >= 0.9f } ?: Color(0xFF19E6FF) else Color.White.copy(alpha = alpha),
                 modifier = Modifier.size(16.dp),
             )
             Text(
@@ -520,8 +520,8 @@ private fun PeekActionButton(
                         brush = if (isActive) {
                             Brush.verticalGradient(
                                 listOf(
-                                    Color(0xFFF59E0B).copy(alpha = 0.95f),
-                                    Color(0xFFD97706).copy(alpha = 0.90f),
+                                    Color(0xFF19E6FF).copy(alpha = 0.95f),
+                                    Color(0xFF0099CC).copy(alpha = 0.90f),
                                 ),
                             )
                         } else {

@@ -32,10 +32,10 @@ fun homepageToolbarColors(
         isPrivateMode -> colors.copy(
             surface = Color.Transparent,
             surfaceContainerHighest = Color.Transparent,
-            onSurface = Color(0xFFFEF3C7),
-            onSurfaceVariant = Color(0xFFF59E0B),
-            outline = Color(0x40F59E0B),
-            outlineVariant = Color(0xFFF59E0B),
+            onSurface = Color(0xFFB3F5FF),
+            onSurfaceVariant = Color(0xFF19E6FF),
+            outline = Color(0x4019E6FF),
+            outlineVariant = Color(0xFF19E6FF),
         )
 
         shouldUseEdgeToEdgeColors -> colors.copy(

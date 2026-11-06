@@ -46,8 +46,8 @@ import org.mozilla.fenix.sidus.storage.TrailNode
 import org.mozilla.fenix.theme.glass.ClarusGlassTokens
 import kotlin.math.roundToInt
 
-// Soft Copper accent: #B8754B
-private val AccentCopper = Color(0xFFB8754B)
+// Soft Copper accent: #00B8D9
+private val AccentCopper = Color(0xFF00B8D9)
 
 // Edge line colors
 private val EdgeColorInactive = Color(0xFFAAA0D2).copy(alpha = 0.25f)

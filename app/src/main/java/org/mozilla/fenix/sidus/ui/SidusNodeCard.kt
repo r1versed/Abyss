@@ -41,8 +41,8 @@ import org.mozilla.fenix.sidus.storage.TrailNode
 import org.mozilla.fenix.theme.glass.ClarusGlassSurface
 import org.mozilla.fenix.theme.glass.ClarusGlassTokens
 
-// Soft Copper: #B8754B
-private val AccentCopper = Color(0xFFB8754B)
+// Soft Copper: #00B8D9
+private val AccentCopper = Color(0xFF00B8D9)
 private val DustLavender = Color(0xFFAAA0D2)
 
 /**
@@ -51,7 +51,7 @@ private val DustLavender = Color(0xFFAAA0D2)
  * Renders as a frosted glass card ([ClarusGlassSurface]) matching the Clarus design
  * language: Smoked Obsidian base, hairline specular top border, rounded corners.
  *
- * The [isActive] node receives a pulsing Soft Copper (#B8754B) glowing border and
+ * The [isActive] node receives a pulsing Soft Copper (#00B8D9) glowing border and
  * an "Active" badge pill to distinguish it visually from its siblings.
  *
  * @param node     The [TrailNode] to display.
